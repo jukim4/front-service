@@ -1,39 +1,26 @@
 import { useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { apiClient } from '@/lib/apiClient';
+import { tokenUtils } from '@/lib/tokenUtils';
 
 export const useAuth = () => {
-  const { user, isAuthenticated, login, logout } = useAuthStore();
+  const { user, isAuthenticated } = useAuthStore();
 
   const handleLogin = async (username: string, passwd: string) => {
     try {
       const { user, accessToken, refreshToken } = await apiClient.login(username, passwd);
-      login(user, accessToken, refreshToken);
+      // login(user, accessToken, refreshToken);
+      tokenUtils.updateTokens(accessToken, refreshToken);
       return { success: true };
     } catch (error: any) {
       return { success: false, error: error.response.data.message };
     }
   };
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await apiClient.logout();
     window.location.href = '/login';
   };
-
-  const checkAuth = async () => {
-    if (isAuthenticated && user) {
-      try {
-        const profile = await apiClient.getProfile();
-        useAuthStore.getState().setUser(profile);
-      } catch (error: any) {
-        logout();
-      }
-    }
-  };
-
-  useEffect(() => {
-    checkAuth();
-  }, []);
 
   return {
     user,
