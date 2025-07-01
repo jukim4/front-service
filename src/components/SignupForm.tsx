@@ -9,19 +9,20 @@ type SignupFormProps = {
 export default function SignupForm({ onSwitch }: SignupFormProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
+  const [username, setUserName] = useState('');
+  const [nickname, setNickName] = useState('');
+  
 
   const handleSubmit = async (e: React.FormEvent) => {
+    const URL = process.env.NEXT_PUBLIC_URL;
     e.preventDefault();
 
-    const nickname = `${firstName} ${lastName}`;
 
     try {
-      const res = await fetch('http://localhost:8080/api/users', {
+      const res = await fetch(`${URL}/api/v1/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, nickname, password }),
+        body: JSON.stringify({ email, nickname, passwd: password, username}),
       });
 
       if (!res.ok) {
@@ -43,16 +44,16 @@ export default function SignupForm({ onSwitch }: SignupFormProps) {
         <input
           type="text"
           placeholder="이름을 입력해주세요"
-          value={firstName}
-          onChange={(e) => setFirstName(e.target.value)}
+          value={username}
+          onChange={(e) => setUserName(e.target.value)}
           required
           className="p-2 border rounded flex-1 w-full"
         />
         <input
           type="text"
-          placeholder="성을 입력해주세요"
-          value={lastName}
-          onChange={(e) => setLastName(e.target.value)}
+          placeholder="닉네임을 입력해주세요"
+          value={nickname}
+          onChange={(e) => setNickName(e.target.value)}
           required
           className="p-2 border rounded flex-1 w-full"
         />
