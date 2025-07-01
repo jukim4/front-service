@@ -10,43 +10,6 @@ class ApiClient {
     this.baseURL = baseURL;
   }
 
-  // private async request<T>(
-  //   endpoint: string,
-  //   options: RequestInit = {}
-  // ): Promise<T> {
-  //   const { accessToken } = useAuthStore.getState();
-    
-  //   const config: RequestInit = {
-  //     headers: {
-  //       'Content-Type': 'application/json',
-  //       ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
-  //       ...options.headers,
-  //     },
-  //     ...options,
-  //   };
-
-  //   const response = await fetch(`${this.baseURL}${endpoint}`, config);
-
-  //   if (response.status === 401) {
-  //     // 토큰 만료 시 자동 갱신 시도
-  //     const refreshed = await this.refreshToken();
-  //     if (refreshed) {
-  //       // 토큰 갱신 성공 시 원래 요청 재시도
-  //       return this.request<T>(endpoint, options);
-  //     } else {
-  //       // 토큰 갱신 실패 시 로그아웃
-  //       useAuthStore.getState().logout();
-  //       window.location.href = '/login';
-  //       throw new Error('Authentication failed');
-  //     }
-  //   }
-
-  //   if (!response.ok) {
-  //     throw new Error(`HTTP error! status: ${response.status}`);
-  //   }
-
-  //   return response.json();
-  // }
 
   async checkAuth() {
     const { accessToken, refreshToken } = tokenUtils.returnTokens();
@@ -83,10 +46,6 @@ class ApiClient {
       });
 
       if (res.status === 200) {
-        const updateTokens = tokenUtils.updateTokens;
-        const data= await res.json();
-        updateTokens(data.accessToken, data.refreshToken);
-
         return true;
       } else {
         console.error('Failed to refresh access token');
@@ -134,13 +93,44 @@ class ApiClient {
     });
 
     if (ref.status === 200) {
-      tokenUtils.updateTokens(null, null); // 토큰 초기화
+      localStorage.clear(); // 토큰 초기화
       useAuthStore.setState({ isAuthenticated: false });
       window.location.href = '/';
     } else {
       const errorData = await ref.json();
       throw new Error(errorData.message || 'Logout Failed');
     }
+  }
+
+  async passwdChange(email: string, currentPwd: string, newPwd: string) {
+    const res = await fetch(`${this.baseURL}/api/v1/change/passwd`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, currentPwd, newPwd }),
+    });
+
+    if (res.status === 200) {
+      return { success: true, message: 'Password changed successfully' };
+    }
+    else {
+      const errorData = await res.json();
+      return { success: false, message: errorData.message || 'Password change failed' };
+    }
+  }
+
+  async signup(email: string, nickname: string, passwd: string, username: string) {
+    const res = await fetch(`${this.baseURL}/api/v1/signup`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, nickname, passwd, username }),
+    });
+
+    if (!res.ok) {
+      const error = await res.text();
+      throw new Error(error);
+    }
+
+    window.location.href = '/login';
   }
 }
 
