@@ -3,20 +3,28 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { useAuth } from "@/hooks/useAuth";
+
 
 export default function Password() {
   const [currentPw, setCurrentPw] = useState("");
   const [newPw, setNewPw] = useState("");
   const [confirmPw, setConfirmPw] = useState("");
   const router = useRouter();
-  const handleSubmit = (e: React.FormEvent) => {
+  const { handleChangePasswd } = useAuth();
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newPw !== confirmPw) {
       alert("새 비밀번호가 일치하지 않습니다.");
       return;
     }
-    alert("비밀번호가 변경되었습니다.");
-    router.push("/mypage");
+    
+    try {
+      await handleChangePasswd('123@123.com', currentPw, newPw)
+    } catch(err: any) {
+      alert("비밀번호 변경 실패" + err.message);
+    }
   };
 
   return (
