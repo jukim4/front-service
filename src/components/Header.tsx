@@ -6,6 +6,9 @@ import { useEffect, useState } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { useAuth } from '@/hooks/useAuth';
 
+import { apiClient } from '@/lib/apiClient';
+
+
 export default function Header() {
   const pathname = usePathname();
   const { user, isAuthenticated } = useAuthStore();
@@ -15,19 +18,12 @@ export default function Header() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
-    // 예: localStorage에 'token'이 있으면 로그인 상태로 간주
-    const token = localStorage.getItem('token');
-    setIsLoggedIn(!!token);
-  }, [pathname]); // 경로가 바뀔 때마다 확인
+    apiClient.checkAuth()
 
-
-  // 로그아웃 함수
-  const handleLogout = () => {
-    localStorage.removeItem('token');  // 토큰 삭제
-    setIsLoggedIn(false);
-    // 로그아웃 후 홈으로 이동하거나 새로고침 등 추가 작업 가능
-    window.location.href = '/'; // 간단하게 홈으로 이동
-  };
+    const interval = setInterval(() => {
+      apiClient.checkAuth();
+    }, 3600000); // 1시간마다 인증 유효성 검사
+  }, []);
 
   return (
     <nav className="border-b bg-blue-900 text-white fixed top-0 left-0 right-0 z-50">
