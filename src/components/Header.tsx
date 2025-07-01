@@ -49,12 +49,12 @@ export default function Header() {
           <div className="flex items-center space-x-6">
             {isAuthenticated ? (
               <>
-                <span className="text-sm text-gray-700">
+                <span className="text-sm">
                   {user?.nickname}님 환영합니다
                 </span>
                 <button
                   onClick={logout}
-                  className="text-sm text-red-600 hover:text-red-800"
+                  className="text-sm hover:text-red-800"
                 >
                   로그아웃
                 </button>
