@@ -20,8 +20,6 @@ interface AuthState {
   setUser: (user: User) => void;
 }
 
-const URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
