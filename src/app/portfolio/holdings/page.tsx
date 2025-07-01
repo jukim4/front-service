@@ -35,60 +35,59 @@ export default function Holdings() {
   return (
     <main className="grid grid-cols-3 gap-2 min-h-screen p-4 md:p-8 bg-gray-50">
       {/* Left Section */}
-      <div className="col-span-2 flex flex-col gap-2">
-        <div className="border rounded-md bg-white px-4 p-4">
-        {/* Tab Navigation */}
-        <div className="flex border-b border-gray-200 mb-6">
-          {tabs.map((tab) => (
-            <button
-              key={tab}
-              onClick={() => handleTabChange(tab)}
-              className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
-                activeTab === tab
-                  ? "text-blue-600 border-blue-600"
-                  : "text-gray-500 border-transparent hover:text-gray-700"
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
+      <div className="col-span-2 border rounded-md overflow-hidden bg-white">
+        <div className="w-full max-w-6xl mx-auto pt-4 bg-white px-4 p-4">
+          {/* Tab Navigation */}
+          <div className="flex border-b border-gray-200 mb-6">
+            {tabs.map((tab) => (
+              <button
+                key={tab}
+                onClick={() => handleTabChange(tab)}
+                className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === tab
+                    ? "text-blue-600 border-blue-600"
+                    : "text-gray-500 border-transparent hover:text-gray-700"
+                  }`}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
         </div>
 
-          {/* Tab Content (보유자산 탭) */}
-          {activeTab === "보유자산" && (
-            <div className="px-6 py-6">
-              <TotalBuyCoin />
+        {/* Tab Content (보유자산 탭) */}
+        {activeTab === "보유자산" && (
+          <div className="flex flex-col w-full max-w-6xl pl-4 bg-white">
+            <TotalBuyCoin />
 
-              <div className="mt-8">
-                <p className="text-xl font-semibold mb-4">보유 코인 포트폴리오</p>
+            <div className="mt-12">
+              <p className="text-3xl text-center font-bold">보유 코인 포트폴리오</p>
 
-                <div className="mt-4 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-                  {/* 도넛 차트 */}
-                  <div className="w-full flex justify-center">
-                    <div className="w-full md:w-2/3 max-w-full aspect-square relative">
-                      <canvas
-                        ref={canvasRef}
-                        id="total-doughnut"
-                        className="w-full h-full"
-                      />
-                    </div>
-                  </div>
-
-                  {/* 차트 데이터 */}
-                  <div className="w-full md:w-1/2">
-                    <PortfolioCoin
-                      uid={1}
-                      datas={getDoughnutData(assets, tickers)}
-                      canvasRef={canvasRef}
+              <div className="flex flex-col md:flex-row md:flex-wrap">
+                {/* 도넛 차트 */}
+                <div className="w-full flex justify-center">
+                  <div className="w-full md:w-2/3 max-w-full aspect-square relative">
+                    <canvas
+                      ref={canvasRef}
+                      id="total-doughnut"
+                      className="w-full h-full"
                     />
                   </div>
                 </div>
-              </div>
 
-              <HoldingCointList />
+                {/* 차트 데이터 */}
+                <div className="w-full md:w-1/2 overflow-hidden">
+                  <PortfolioCoin
+                    uid={1}
+                    datas={getDoughnutData(assets, tickers)}
+                    canvasRef={canvasRef}
+                  />
+                </div>
+              </div>
             </div>
-          )}
-        </div>
+
+            <HoldingCointList />
+          </div>
+        )}
       </div>
 
       {/* Right (검색 및 마켓 영역) */}

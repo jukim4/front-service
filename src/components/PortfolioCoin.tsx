@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, RefObject } from "react";
 import Chart from "chart.js/auto";
 import ChartDataLabels from "chartjs-plugin-datalabels";
@@ -77,9 +76,9 @@ export default function PortfolioCoin({uid, datas, canvasRef}: PortfolioCoinProp
                                     const datasets = chart.data.datasets;
                                     const bgColors = datasets[0].backgroundColor as string[];
                                     return datasets[0].data.map((val, idx) => {
-                                        const numbericValue = typeof val === 'number' ? val : 0;
+                                        const numericValue = typeof val === 'number' ? val : 0;
                                         return {
-                                            text: `${chart.data.labels?.[idx] ?? ''}: ${numbericValue.toFixed(2)} %`,
+                                            text: `${chart.data.labels?.[idx] ?? ''}: ${numericValue.toFixed(2)} %`,
                                             fillStyle: bgColors[idx],
                                             index: idx,
                                             strokeStyle: bgColors[idx]

@@ -89,22 +89,3 @@
     @apply bg-background text-foreground;
   }
 } 
-
-/* PortfolioCoin.module.css 혹은 글로벌 css */
-.portfolio-text {
-  white-space: normal; /* 줄바꿈 허용 */
-  font-size: 1rem;
-  transition: font-size 0.3s ease;
-}
-
-@media (max-width: 768px) {
-  .portfolio-text {
-    font-size: 0.85rem; /* 화면 좁아지면 글자 크기 줄임 */
-  }
-}
-
-@media (max-width: 480px) {
-  .portfolio-text {
-    font-size: 0.75rem;
-  }
-}
