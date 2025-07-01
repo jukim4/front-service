@@ -17,9 +17,29 @@ export const useAuth = () => {
     }
   };
 
+  const handleSingup = async (email: string, nickname: string, passwd: string, username: string) => {
+    try {
+      await apiClient.signup(email, nickname, passwd, username);
+      return { success: true, message: '회원가입 성공' };
+    } catch (error: any) {
+      return { success: false, error: error.message || '회원가입 실패' };
+    }
+  };
+
   const handleLogout = async () => {
     await apiClient.logout();
     window.location.href = '/login';
+  };
+
+  const handleChangePasswd = async (email: string, currentPwd: string, newPwd: string) => {
+    const { success, message } = await apiClient.passwdChange(email, currentPwd, newPwd);
+
+    if (success) {
+      alert(message);
+      window.location.href = '/mypage';
+    } else {
+      alert(message);
+    }
   };
 
   return {
@@ -27,5 +47,7 @@ export const useAuth = () => {
     isAuthenticated,
     login: handleLogin,
     logout: handleLogout,
+    handleChangePasswd,
+    handleSingup,
   };
 }; 
