@@ -1,3 +1,4 @@
+import { useAuth } from '@/hooks/useAuth';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
@@ -16,9 +17,10 @@ interface AuthState {
   // Actions
   login: (user: User, accessToken: string, refreshToken: string) => void;
   logout: () => void;
-  updateTokens: (accessToken: string, refreshToken?: string) => void;
   setUser: (user: User) => void;
 }
+
+const URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
 export const useAuthStore = create<AuthState>()(
   persist(
@@ -43,12 +45,6 @@ export const useAuthStore = create<AuthState>()(
           refreshToken: null,
           isAuthenticated: false,
         }),
-
-      updateTokens: (accessToken, refreshToken) =>
-        set((state) => ({
-          accessToken,
-          refreshToken: refreshToken || state.refreshToken,
-        })),
 
       setUser: (user) => set({ user }),
     }),
