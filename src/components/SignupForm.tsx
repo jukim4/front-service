@@ -1,6 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+
+import { useAuthStore } from '@/store/authStore';
 
 type SignupFormProps = {
   onSwitch?: () => void;
@@ -11,26 +14,20 @@ export default function SignupForm({ onSwitch }: SignupFormProps) {
   const [password, setPassword] = useState('');
   const [username, setUserName] = useState('');
   const [nickname, setNickName] = useState('');
+  const { handleSingup } = useAuth(); // Assuming useAuth hook is available
   
 
   const handleSubmit = async (e: React.FormEvent) => {
-    const URL = process.env.NEXT_PUBLIC_URL || 'http://localhost';
     e.preventDefault();
 
     try {
-      const res = await fetch(`${URL}/api/v1/signup`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, nickname, passwd: password, username}),
-      });
-
-      if (!res.ok) {
-        const error = await res.text();
-        throw new Error(error);
+      const result = await handleSingup(email, nickname, password, username);
+      if (result.success) {
+        alert(result.message);
+      } else {
+        alert(result.message);
       }
-
-      alert('회원가입 완료!');
-      onSwitch && onSwitch(); // 로그인 페이지로 이동 요청
+      
     } catch (err: any) {
       alert('회원가입 실패: ' + err.message);
     }
