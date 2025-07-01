@@ -17,9 +17,6 @@ export default function SignupForm({ onSwitch }: SignupFormProps) {
     const URL = process.env.NEXT_PUBLIC_URL || 'http://localhost';
     e.preventDefault();
 
-    console.log(URL);
-
-
     try {
       const res = await fetch(`${URL}/api/v1/signup`, {
         method: 'POST',
