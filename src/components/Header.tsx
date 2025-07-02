@@ -49,9 +49,9 @@ export default function Header() {
           <div className="flex items-center space-x-6">
             {isAuthenticated ? (
               <>
-                <span className="text-sm">
+                <Link href="/mypage" className="text-sm hover:text-gray-300">
                   {user?.nickname}님 환영합니다
-                </span>
+                </Link>
                 <button
                   onClick={logout}
                   className="text-sm hover:text-red-800"
