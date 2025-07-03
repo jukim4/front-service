@@ -10,7 +10,7 @@ class ApiClient {
     this.baseURL = baseURL;
   }
 
-
+  // token 유효성 검증
   async checkAuth() {
     const { accessToken, refreshToken } = tokenUtils.returnTokens();
     const isValid = tokenUtils.isTokenValie();
@@ -46,13 +46,16 @@ class ApiClient {
       });
 
       if (res.status === 200) {
+        res.json().then((data) => {
+          tokenUtils.updateTokens(data.accessToken, data.refreshToken);
+        });
+
         return true;
       } else {
         console.error('Failed to refresh access token');
         useAuthStore.setState({ isAuthenticated: false });
         // 토큰 갱신 실패 시 로그아웃 처리
-
-
+        this.logout();
         window.location.href = '/login';
         return false;
       }
