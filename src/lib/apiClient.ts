@@ -1,5 +1,6 @@
 import { useAuthStore } from '@/store/authStore';
 import { tokenUtils } from './tokenUtils';
+import { json } from 'stream/consumers';
 
 const URL = process.env.NEXT_PUBLIC_URL || 'http://localhost';
 
@@ -87,6 +88,7 @@ class ApiClient {
     })
   }
 
+  // 로그 아웃
   async logout() {
     const ref = await fetch(`${this.baseURL}/api/v1/logout`, {
       method: 'DELETE',
@@ -105,6 +107,7 @@ class ApiClient {
     }
   }
 
+  // 비밀번호 변경
   async passwdChange(email: string, currentPwd: string, newPwd: string) {
     const res = await fetch(`${this.baseURL}/api/v1/change/passwd`, {
       method: 'POST',
@@ -121,6 +124,7 @@ class ApiClient {
     }
   }
 
+  // 회원가입
   async signup(email: string, nickname: string, passwd: string, username: string) {
     const res = await fetch(`${this.baseURL}/api/v1/signup`, {
       method: 'POST',
@@ -134,6 +138,71 @@ class ApiClient {
     }
 
     window.location.href = '/login';
+  }
+
+  // 시장가 매수
+  async orderMarket(coin_ticker: string, position: string, total: number, market_code: string) {
+    const token = tokenUtils.returnTokens().accessToken
+    if (position === 'buy') {
+      const res = await fetch(`${this.baseURL}/api/v1/orders/market/buy`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ coin_ticker, position, total_price: total, market_code }),
+      });
+
+      if (res.status === 200) {
+        return { success: true, message: "주문 성공!"}
+      } else {
+        return { success: false, message: "주문 실패"}
+      }
+    } else if (position === 'sell') {
+      const res = await fetch(`${this.baseURL}/api/v1/orders/market/sell`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ coin_ticker, position, order_quantity: total, market_code }),
+      });
+
+      if (res.status === 200) {
+        return { success: true, message: "주문 성공!"}
+      } else {
+        return { success: false, message: "주문 실패"}
+      }
+    }
+
+    return { success: false, message: "알 수 없는 이유로 실패하였습니다"}
+  }
+
+  async orderLimit(market_code: string, coin_ticker: string, order_price: number, position: string, order_quantity: number, total_order_price: number) {
+    const token = tokenUtils.returnTokens().accessToken;
+
+    if (position === 'buy') {
+      const res = await fetch(`${this.baseURL}/api/v1/orders/limit`, {
+        method: "POST",
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ market_code, coin_ticker, position, order_price, order_quantity, total_order_price})
+      });
+
+      if (res.status === 200) {
+        return { success: true, message: "주문 성공!"}
+      } else {
+        return { success: false, message: "주문 실패"}
+      }
+    } else if (position === 'sell') {
+      const res = await fetch(`${this.baseURL}/api/v1/orders/limit`, {
+        method: "POST",
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ market_code, coin_ticker, position, order_price, order_quantity, total_order_price})
+      });
+
+      if (res.status === 200) {
+        return { success: true, message: "주문 성공!"}
+      } else {
+        return { success: false, message: "주문 실패"}
+      }
+    }
+
+    return { success: false, message: "주문실패"}
+
   }
 }
 
