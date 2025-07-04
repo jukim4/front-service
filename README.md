@@ -3,23 +3,26 @@
   <h3 align="center">코윙 서비스의 UI를 제공합니다.</h3>
 </div>
 
-## Installation
+
+
+## Environment Variables
+
+환경별로 다른 웹소켓 및 API URL을 사용하기 위해 환경변수를 설정할 수 있습니다.
+
+### Local Development
+프로젝트 루트에 `.env.local` 파일을 생성하고 다음 변수들을 설정하세요:
+
+```bash
+# Upbit WebSocket URL (Production)
+UPBIT_WS_URL=wss://api.upbit.com/websocket/v1
+
+# Upbit API URL (Production)
+UPBIT_API_URL=https://api.upbit.com/v1
 ```
-npm i chartjs chartjs-chart-financial chartjs-adapter-date-fns axios 
-```
-=======
-- 현재 개발 진행 중입니다.
 
-<br/>
+### Environment Table
 
-## How to Test
-- 현재 개발 진행 중입니다.
-<br/>
-
-## Environment Table
-- 현재 개발 진행 중입니다.  
-- 이후 배포에 필요한 환경 변수 예제를 추가할 예정입니다.
-
-| Variable                      | dev | qa/prod |              Example               | Explanation                                           |
-| ----------------------------- | :-: | :-----: | :--------------------------------: | ----------------------------------------------------- |
-| X | X | X | X | X |
+| Variable | dev | qa/prod | Example | Explanation |
+| -------- | --- | ------- | ------- | ----------- |
+| UPBIT_WS_URL | wss://api.upbit.com/websocket/v1 | wss://api.upbit.com/websocket/v1 | wss://api.upbit.com/websocket/v1 | 업비트 웹소켓 연결 URL |
+| UPBIT_API_URL | https://api.upbit.com/v1 | https://api.upbit.com/v1 | https://api.upbit.com/v1 | 업비트 REST API URL |
