@@ -1,99 +1,215 @@
 import { useAuthStore } from '@/store/authStore';
+import { tokenUtils } from './tokenUtils';
+import { json } from 'stream/consumers';
+
+const URL = process.env.NEXT_PUBLIC_URL || 'http://localhost:8080';
 
 class ApiClient {
-  private baseURL: string;
+  private baseURL: string = URL;
 
   constructor(baseURL: string) {
     this.baseURL = baseURL;
   }
 
-  private async request<T>(
-    endpoint: string,
-    options: RequestInit = {}
-  ): Promise<T> {
-    const { accessToken } = useAuthStore.getState();
-    
-    const config: RequestInit = {
-      headers: {
-        'Content-Type': 'application/json',
-        ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
-        ...options.headers,
-      },
-      ...options,
-    };
+  // token 유효성 검증
+  async checkAuth() {
+    const { accessToken, refreshToken } = tokenUtils.returnTokens();
+    const isValid = tokenUtils.isTokenValie();
+    if (!accessToken) {
+      useAuthStore.setState({ isAuthenticated: false });
+      return;
 
-    const response = await fetch(`${this.baseURL}${endpoint}`, config);
-
-    if (response.status === 401) {
-      // 토큰 만료 시 자동 갱신 시도
-      const refreshed = await this.refreshToken();
-      if (refreshed) {
-        // 토큰 갱신 성공 시 원래 요청 재시도
-        return this.request<T>(endpoint, options);
-      } else {
-        // 토큰 갱신 실패 시 로그아웃
-        useAuthStore.getState().logout();
-        window.location.href = '/login';
-        throw new Error('Authentication failed');
+    } else if (!isValid) {
+      console.error("AccessToken is not valid");
+      if(!refreshToken) {
+        useAuthStore.setState({ isAuthenticated: false });
+        return;
       }
+      this.refreshToken();
+      window.location.href = '/login';
     }
+    useAuthStore.setState({ isAuthenticated: !accessToken ? false: true });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    return response.json();
   }
 
+  // accessToken 갱신 함수
   private async refreshToken(): Promise<boolean> {
     try {
-      const { refreshToken } = useAuthStore.getState();
-      if (!refreshToken) return false;
+      const refresh = tokenUtils.returnTokens().refreshToken;
+      if (!refresh) {
+        console.error('RefreshToken is not available');
+        return false;
+      }
 
-      const response = await fetch(`${this.baseURL}/auth/refresh`, {
+      const res = await fetch(`${this.baseURL}/api/v1/refresh`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refreshToken }),
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${refresh}`},
+        credentials: 'include',
       });
 
-      if (response.ok) {
-        const { accessToken, refreshToken: newRefreshToken } = await response.json();
-        useAuthStore.getState().updateTokens(accessToken, newRefreshToken);
+      if (res.status === 200) {
+        res.json().then((data) => {
+          tokenUtils.updateTokens(data.accessToken, data.refreshToken);
+        });
+
         return true;
+      } else {
+        console.error('Failed to refresh access token');
+        useAuthStore.setState({ isAuthenticated: false });
+        // 토큰 갱신 실패 시 로그아웃 처리
+        this.logout();
+        window.location.href = '/login';
+        return false;
       }
-      return false;
     } catch {
       return false;
     }
   }
 
   // Auth API methods
-  async login(email: string, password: string) {
-    return this.request<{
-      user: { id: string; email: string; nickname: string };
-      accessToken: string;
-      refreshToken: string;
-    }>('/auth/login', {
+  async login(username: string, passwd: string) {
+    const res = await fetch(`${this.baseURL}/api/v1/login`, {
       method: 'POST',
-      body: JSON.stringify({ email, password }),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, passwd }),
+      credentials: 'include', // 쿠키를 포함하여 요청
     });
+
+    return res.json().then((data) => {
+      if(res.status === 200) {
+        useAuthStore.setState({isAuthenticated: true});
+        return {
+          user: null,
+          accessToken: data.accessToken,
+          refreshToken: data.refreshToken,
+        }
+      } else {
+        throw new Error(data.message || 'Login Failed');
+      }
+    })
   }
 
-  async signup(email: string, nickname: string, password: string) {
-    return this.request<{ message: string }>('/auth/signup', {
+  // 로그 아웃
+  async logout() {
+    const ref = await fetch(`${this.baseURL}/api/v1/logout`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json',
+        'Authorization': `Bearer ${tokenUtils.returnTokens().accessToken}` // 현재 accessToken 사용 
+       },
+       credentials: 'include',
+    });
+
+    if (ref.status === 200) {
+      localStorage.clear(); // 토큰 초기화
+      useAuthStore.setState({ isAuthenticated: false });
+      window.location.href = '/';
+    } else {
+      const errorData = await ref.json();
+      throw new Error(errorData.message || 'Logout Failed');
+    }
+  }
+
+  // 비밀번호 변경
+  async passwdChange(email: string, currentPwd: string, newPwd: string) {
+    const res = await fetch(`${this.baseURL}/api/v1/change/passwd`, {
       method: 'POST',
-      body: JSON.stringify({ email, nickname, password }),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, currentPwd, newPwd }),
     });
+
+    if (res.status === 200) {
+      return { success: true, message: 'Password changed successfully' };
+    }
+    else {
+      const errorData = await res.json();
+      return { success: false, message: errorData.message || 'Password change failed' };
+    }
   }
 
-  async getProfile() {
-    return this.request<{ id: string; email: string; nickname: string }>('/auth/profile');
+  // 회원가입
+  async signup(email: string, nickname: string, passwd: string, username: string) {
+    const res = await fetch(`${this.baseURL}/api/v1/signup`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, nickname, passwd, username }),
+    });
+
+    if (!res.ok) {
+      const error = await res.text();
+      throw new Error(error);
+    }
+
+    window.location.href = '/login';
   }
 
-  // 기존 API methods (JWT 토큰 자동 포함)
-  async getMarkets() {
-    return this.request<any[]>('/markets');
+  // 시장가 매수
+  async orderMarket(coin_ticker: string, position: string, total: number, market_code: string) {
+    const token = tokenUtils.returnTokens().accessToken
+    if (position === 'buy') {
+      const res = await fetch(`${this.baseURL}/api/v1/orders/market/buy`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ coin_ticker, position, total_price: total, market_code }),
+        credentials: 'include',
+      });
+
+      if (res.status === 200) {
+        return { success: true, message: "주문 성공!"}
+      } else {
+        return { success: false, message: "주문 실패"}
+      }
+    } else if (position === 'sell') {
+      const res = await fetch(`${this.baseURL}/api/v1/orders/market/sell`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ coin_ticker, position, order_quantity: total, market_code }),
+        credentials: 'include',
+      });
+
+      if (res.status === 200) {
+        return { success: true, message: "주문 성공!"}
+      } else {
+        return { success: false, message: "주문 실패"}
+      }
+    }
+
+    return { success: false, message: "알 수 없는 이유로 실패하였습니다"}
+  }
+
+  async orderLimit(market_code: string, coin_ticker: string, order_price: number, position: string, order_quantity: number, total_order_price: number) {
+    const token = tokenUtils.returnTokens().accessToken;
+
+    if (position === 'buy') {
+      const res = await fetch(`${this.baseURL}/api/v1/orders/limit`, {
+        method: "POST",
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ market_code, coin_ticker, position, order_price, order_quantity, total_order_price}),
+        credentials: 'include',
+      });
+
+      if (res.status === 200) {
+        return { success: true, message: "주문 성공!"}
+      } else {
+        return { success: false, message: "주문 실패"}
+      }
+    } else if (position === 'sell') {
+      const res = await fetch(`${this.baseURL}/api/v1/orders/limit`, {
+        method: "POST",
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ market_code, coin_ticker, position, order_price, order_quantity, total_order_price}),
+        credentials: 'include',
+      });
+
+      if (res.status === 200) {
+        return { success: true, message: "주문 성공!"}
+      } else {
+        return { success: false, message: "주문 실패"}
+      }
+    }
+
+    return { success: false, message: "주문실패"}
+
   }
 }
 
-export const apiClient = new ApiClient('http://localhost:8080/api'); 
+export const apiClient = new ApiClient(URL);

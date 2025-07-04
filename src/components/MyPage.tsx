@@ -5,10 +5,15 @@ import Image from 'next/image';
 import axios from 'axios';
 import Link from 'next/link';
 
+import { useAuthStore } from '@/store/authStore';
+
 export default function MyPage() {
     const [preview, setPreview] = useState<string | null>(null);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [bankruptcyStep, setBankruptcyStep] = useState<'none' | 'confirm' | 'done'>('none');
+
+    // 임시 사용자 정보
+    const {user} = useAuthStore();
 
     const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -129,7 +134,7 @@ export default function MyPage() {
                             <label className="block text-sm font-medium">이메일</label>
                             <input
                                 type="email"
-                                value="1234@gmail.com"
+                                value={user?.email || ''}
                                 disabled
                                 className="mt-1 w-full border px-3 py-2 rounded bg-gray-100 text-sm"
                             />
