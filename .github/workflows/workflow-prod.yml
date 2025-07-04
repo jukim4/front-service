@@ -6,7 +6,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository_owner }}/cowing-msa-front
+  IMAGE_NAME: ${{ github.repository_owner | lowercase }}/cowing-msa-front
 
 jobs:
   build-and-push-image:
