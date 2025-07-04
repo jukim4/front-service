@@ -2,7 +2,7 @@ import { useAuthStore } from '@/store/authStore';
 import { tokenUtils } from './tokenUtils';
 import { json } from 'stream/consumers';
 
-const URL = process.env.NEXT_PUBLIC_URL || 'http://localhost';
+const URL = process.env.NEXT_PUBLIC_URL || 'http://localhost:8080';
 
 class ApiClient {
   private baseURL: string = URL;
@@ -44,6 +44,7 @@ class ApiClient {
       const res = await fetch(`${this.baseURL}/api/v1/refresh`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${refresh}`},
+        credentials: 'include',
       });
 
       if (res.status === 200) {
@@ -95,6 +96,7 @@ class ApiClient {
       headers: { 'Content-Type': 'application/json',
         'Authorization': `Bearer ${tokenUtils.returnTokens().accessToken}` // 현재 accessToken 사용 
        },
+       credentials: 'include',
     });
 
     if (ref.status === 200) {
@@ -148,6 +150,7 @@ class ApiClient {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ coin_ticker, position, total_price: total, market_code }),
+        credentials: 'include',
       });
 
       if (res.status === 200) {
@@ -160,6 +163,7 @@ class ApiClient {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ coin_ticker, position, order_quantity: total, market_code }),
+        credentials: 'include',
       });
 
       if (res.status === 200) {
@@ -179,7 +183,8 @@ class ApiClient {
       const res = await fetch(`${this.baseURL}/api/v1/orders/limit`, {
         method: "POST",
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ market_code, coin_ticker, position, order_price, order_quantity, total_order_price})
+        body: JSON.stringify({ market_code, coin_ticker, position, order_price, order_quantity, total_order_price}),
+        credentials: 'include',
       });
 
       if (res.status === 200) {
@@ -191,7 +196,8 @@ class ApiClient {
       const res = await fetch(`${this.baseURL}/api/v1/orders/limit`, {
         method: "POST",
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ market_code, coin_ticker, position, order_price, order_quantity, total_order_price})
+        body: JSON.stringify({ market_code, coin_ticker, position, order_price, order_quantity, total_order_price}),
+        credentials: 'include',
       });
 
       if (res.status === 200) {
