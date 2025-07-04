@@ -9,8 +9,8 @@ type LoginFormProps = {
 };
 
 export default function LoginForm({ onSwitch }: LoginFormProps) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [username, setUserName] = useState('');
+  const [passwd, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
   const router = useRouter();
@@ -20,7 +20,7 @@ export default function LoginForm({ onSwitch }: LoginFormProps) {
     setIsLoading(true);
 
     try {
-      const result = await login(email, password);
+      const result = await login(username, passwd);
       if (result.success) {
         router.push('/'); // 메인 페이지로 리다이렉트
       } else {
@@ -37,10 +37,10 @@ export default function LoginForm({ onSwitch }: LoginFormProps) {
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <h2 className="text-2xl font-bold text-left">로그인</h2>
       <input
-        type="email"
-        placeholder="이메일 주소를 입력해주세요"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
+        type="text"
+        placeholder="이름을 입력해주세요"
+        value={username}
+        onChange={(e) => setUserName(e.target.value)}
         required
         disabled={isLoading}
         className="p-2 border rounded w-96"
@@ -48,7 +48,7 @@ export default function LoginForm({ onSwitch }: LoginFormProps) {
       <input
         type="password"
         placeholder="비밀번호를 입력해주세요"
-        value={password}
+        value={passwd}
         onChange={(e) => setPassword(e.target.value)}
         required
         disabled={isLoading}

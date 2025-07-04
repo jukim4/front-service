@@ -1,16 +1,15 @@
 import React, { useEffect } from "react";
 import Chart from "chart.js/auto";
 
-interface ProfitLossProps {
-  canvasRef: React.RefObject<HTMLCanvasElement>;
-}
 
 // bar chart border
 
-export default function ProfitLossChart({ canvasRef }: ProfitLossProps) {
+export default function ProfitLossChart() {
 
   useEffect(() => {
-    const ctx = canvasRef.current;
+    const canvas = document.getElementById("profitloss") as HTMLCanvasElement | null;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
     const labels = ["1월", "2월", "3월", "4월", "5월"];
@@ -25,23 +24,32 @@ export default function ProfitLossChart({ canvasRef }: ProfitLossProps) {
         labels,
         datasets: [
           {
-            label: "손익",
+            label: "손익 그래프",
             data,
             backgroundColor: bakgroundColors,
             borderColor: borderColors,
-            borderWidth: 2,
+            borderWidth: 1,
           },
         ],
       },
       options: {
         responsive: false,
+        plugins: {
+          legend: {
+            display: false,
+          },
+          title: {
+            display: true,
+            text: "손익 그래프",
+          }
+        },
       },
     });
 
     return () => {
       chart.destroy();
     };
-  }, [canvasRef]);
+  },);
 
   return null;
 }

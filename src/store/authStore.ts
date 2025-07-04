@@ -1,8 +1,9 @@
+import { useAuth } from '@/hooks/useAuth';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 interface User {
-  id: string;
+  username: string;
   email: string;
   nickname: string;
 }
@@ -16,7 +17,6 @@ interface AuthState {
   // Actions
   login: (user: User, accessToken: string, refreshToken: string) => void;
   logout: () => void;
-  updateTokens: (accessToken: string, refreshToken?: string) => void;
   setUser: (user: User) => void;
 }
 
@@ -43,12 +43,6 @@ export const useAuthStore = create<AuthState>()(
           refreshToken: null,
           isAuthenticated: false,
         }),
-
-      updateTokens: (accessToken, refreshToken) =>
-        set((state) => ({
-          accessToken,
-          refreshToken: refreshToken || state.refreshToken,
-        })),
 
       setUser: (user) => set({ user }),
     }),
