@@ -2,7 +2,7 @@ import { useAuthStore } from '@/store/authStore';
 import { tokenUtils } from './tokenUtils';
 import { json } from 'stream/consumers';
 
-const URL = process.env.NEXT_PUBLIC_URL || 'http://localhost:8080';
+const URL = process.env.NEXT_PUBLIC_URL || 'http://localhost';
 
 class ApiClient {
   private baseURL: string = URL;
@@ -89,7 +89,7 @@ class ApiClient {
     })
   }
 
-  // 로그 아웃
+  // 로그아웃
   async logout() {
     const ref = await fetch(`${this.baseURL}/api/v1/logout`, {
       method: 'DELETE',
@@ -145,41 +145,48 @@ class ApiClient {
   // 시장가 매수
   async orderMarket(coin_ticker: string, position: string, total: number, market_code: string) {
     const token = tokenUtils.returnTokens().accessToken
-    if (position === 'buy') {
-      const res = await fetch(`${this.baseURL}/api/v1/orders/market/buy`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ coin_ticker, position, total_price: total, market_code }),
-        credentials: 'include',
-      });
+    try {
 
-      if (res.status === 200) {
-        return { success: true, message: "주문 성공!"}
+      if(position === "buy") {
+        
+          const res = await fetch(`${this.baseURL}/api/v1/orders/market/${position}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ coin_ticker, position, total_price: total, market_code }),
+            credentials: 'include',
+          });
+
+          if (res.status === 200) {
+            return {message: "주문이 성공하였습니다!", success: true};
+          } else {
+            return {message: "주문이 실패하였습니다", success: false};
+          }
+
       } else {
-        return { success: false, message: "주문 실패"}
-      }
-    } else if (position === 'sell') {
-      const res = await fetch(`${this.baseURL}/api/v1/orders/market/sell`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ coin_ticker, position, order_quantity: total, market_code }),
-        credentials: 'include',
-      });
+        const res = await fetch(`${this.baseURL}/api/v1/orders/market/${position}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ coin_ticker, position, total_quantity: total, market_code }),
+            credentials: 'include',
+          });
 
-      if (res.status === 200) {
-        return { success: true, message: "주문 성공!"}
-      } else {
-        return { success: false, message: "주문 실패"}
+          if (res.status === 200) {
+            return {message: "주문이 성공하였습니다!", success: true};
+          } else {
+            return {message: "주문이 실패하였습니다", success: false};
+          }
       }
-    }
-
-    return { success: false, message: "알 수 없는 이유로 실패하였습니다"}
+   
+      } catch (err) {
+        console.error("API Error: ", err);
+        throw err;
+      }
   }
 
+  // 지정가 매수
   async orderLimit(market_code: string, coin_ticker: string, order_price: number, position: string, order_quantity: number, total_order_price: number) {
     const token = tokenUtils.returnTokens().accessToken;
-
-    if (position === 'buy') {
+    try {
       const res = await fetch(`${this.baseURL}/api/v1/orders/limit`, {
         method: "POST",
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
@@ -188,27 +195,63 @@ class ApiClient {
       });
 
       if (res.status === 200) {
-        return { success: true, message: "주문 성공!"}
+        return {message: "주문이 성공하였습니다!", success: true};
       } else {
-        return { success: false, message: "주문 실패"}
+        return {message: "주문이 실패하였습니다", success: false};
       }
-    } else if (position === 'sell') {
-      const res = await fetch(`${this.baseURL}/api/v1/orders/limit`, {
-        method: "POST",
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ market_code, coin_ticker, position, order_price, order_quantity, total_order_price}),
-        credentials: 'include',
-      });
-
-      if (res.status === 200) {
-        return { success: true, message: "주문 성공!"}
-      } else {
-        return { success: false, message: "주문 실패"}
-      }
+    } catch(err) {
+      console.error("API Error: ", err);
+      throw err;
     }
+  }
 
-    return { success: false, message: "주문실패"}
+  // user 정보받기
+  async userInfo() {
+    const token = tokenUtils.returnTokens().accessToken;
+    try {
+  const res = await fetch(`${this.baseURL}/api/v1/asset`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+  });
 
+  const data = await res.json(); // await 사용
+
+  if (res.status === 200) {
+    return data;
+  } else {
+    throw new Error(data.message || 'Request failed');
+  }
+} catch (err) {
+  console.error('API Error:', err);
+  throw err; // 상위로 에러 전달
+}
+  }
+
+  // 포트폴리오
+  async userPorfolio() {
+    const token = tokenUtils.returnTokens().accessToken;
+    try {
+      const res = await fetch(`${this.baseURL}/api/v1/portfolio`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      const data = await res.json();
+      if(res.status === 200) {
+        return data.data;
+      } else {
+        throw new Error(data.message || 'Request failed');
+      }
+    } catch(err) {
+      console.error('API Error', err);
+      throw err;
+    }
   }
 }
 
