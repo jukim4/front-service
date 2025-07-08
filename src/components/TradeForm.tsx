@@ -115,8 +115,12 @@ export default function TradeForm() {
     }
 
     // 최소 결제 금액
-    if (Number(totalPrice.replace(/,/g, '')) < 5000 || ( activeTab==='매도' && Number(totalPrice.replace(/,/g, '')) > currentPortpolio.total_cost)) {
-      console.log(Number(totalPrice.replace(/,/g, '')), '히히', currentPortpolio.total_cost)
+    if ( (activeTab === '매도' && selectedPosition === '시장가' && Number(totalPrice.replace(/,/g, '')) > currentPortpolio.quantity)) {
+
+      if (( Number(totalPrice.replace(/,/g, '')) < 5000 
+    || activeTab==='매도' && selectedPosition !== '시장가' && Number(totalPrice.replace(/,/g, '')) > currentPortpolio.total_cost)) {
+        return;
+      }
       return;
     }
 
@@ -142,9 +146,7 @@ export default function TradeForm() {
         } 
       } else if(activeTab === '매도') {
         try {
-          const result = await apiClient.orderMarket(coin_ticker, 'sell', coinCnt, selectedMarket);
-
-          console.log(coin_ticker, total, selectedMarket, "시장가 매도");
+          const result = await apiClient.orderMarket(coin_ticker, 'sell', total, selectedMarket);
             
           if(result.success) {
             alert(result.message)
@@ -236,13 +238,24 @@ export default function TradeForm() {
         <span className="text-sm font-medium">{holdings_coin} KRW</span>
       </div>
 
-      <div className="px-4 py-2 flex justify-between">
+
+      {(activeTab === '매도' && selectedPosition === '시장가')? (
+          <div className="px-4 py-2 flex justify-between">
+            <span className="text-sm">보유코인</span>
+            <span className="text-sm font-medium">{ currentPortpolio.quantity}</span>
+          </div>
+      ): <div className="px-4 py-2 flex justify-between">
         <span className="text-sm">보유</span>
         <span className="text-sm font-medium">{ currentPortpolio.total_cost} KRW</span>
       </div>
+    }
 
       {/* Price Input */}
-      <div className="px-4 py-2">
+      {(activeTab === '매도' && selectedPosition === '시장가')? (
+        <div></div>
+      ):
+      <div>
+        <div className="px-4 py-2">
         <div className="flex items-center mb-1">
           <span className="text-sm">{activeTab === "매수" ? "매수가격" : "매도가격"} (KRW)</span>
         </div>
@@ -285,7 +298,6 @@ export default function TradeForm() {
         </div>
       </div>
 
-      {/* Percentage Buttons */}
       <div className="px-4 py-2 grid grid-cols-5 gap-2">
         {percentages.map((percent) => (
           <button
@@ -299,11 +311,16 @@ export default function TradeForm() {
           </button>
         ))}
       </div>
+      </div>
+      }
+      
 
       {/* Total */}
       <div className="px-4 py-2">
         <div className="flex items-center mb-1">
-          <span className="text-sm">주문총액 (KRW)</span>
+          {(activeTab === '매도' && selectedPosition === '시장가')?
+          (<span className="text-sm">주문수량</span>):
+          <span className="text-sm">주문총액 (KRW)</span>}
         </div>
         <input type="text" value={totalPrice} className="w-full border rounded p-2 text-right"
          onChange={e => {
