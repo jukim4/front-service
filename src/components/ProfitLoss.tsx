@@ -7,9 +7,7 @@ import ProfitLossChart from "./ProfitLossChart";
 import ProfitLossNum from "./ProfitLossNum";
 
 import MarketSortBar from "@/components/MarketSortBar";
-import MarketTabs from "@/components/MarketTabs";
-import SearchBar from "@/components/SearchBar";
-import MarketList from "@/components/MarketList";
+import MarketListCompoenet from "./MarketListComponent";
 import { useRouter } from "next/navigation";
 
 export default function ProfitLoss() {
@@ -78,21 +76,7 @@ export default function ProfitLoss() {
 
       {/* Right section - 1/3 width (1 column) */}
       <div className="relative col-span-1">
-        <div className="sticky top-4 flex h-[calc(100vh-2rem)] flex-col gap-2">
-          {/* Non-scrolling part */}
-          <div className="flex-shrink-0">
-            <SearchBar />
-            <div className="mt-2 rounded-t-md border-x border-t bg-white">
-              <MarketTabs />
-              <MarketSortBar />
-            </div>
-          </div>
-            
-          {/* Scrolling part */}
-          <div className="flex-1 rounded-b-md border-x border-b bg-white overflow-y-auto">
-            <MarketList />
-          </div>
-        </div>
+        <MarketListCompoenet></MarketListCompoenet>
       </div>
 
 
