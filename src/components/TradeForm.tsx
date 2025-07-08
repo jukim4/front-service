@@ -115,7 +115,7 @@ export default function TradeForm() {
     }
 
     // 최소 결제 금액
-    if (Number(totalPrice.replace(/,/g, '')) < 5000 || ( activeTab==='매도' && Number(totalPrice.replace(/,/g, '')) > tickers[selectedMarket]?.trade_price * currentPortpolio.quantity)) {
+    if (Number(totalPrice.replace(/,/g, '')) < 5000 || ( activeTab==='매도' && Number(totalPrice.replace(/,/g, '')) > currentPortpolio.total_cost)) {
       return;
     }
 
