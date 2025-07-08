@@ -70,7 +70,7 @@ export default function TradeForm() {
     const result = Number(price.replace(/,/g, ''));
     const total = parseFloat(totalPrice.replace(/,/g, ''));
     if(!isNaN(result) && result > 0 && !isNaN(total)) {
-      setCoinCnt(Number((total/result).toFixed(8)));
+      setCoinCnt(Number((total/result)));
     } else {
       setCoinCnt(0);
     }
@@ -116,6 +116,7 @@ export default function TradeForm() {
 
     // 최소 결제 금액
     if (Number(totalPrice.replace(/,/g, '')) < 5000 || ( activeTab==='매도' && Number(totalPrice.replace(/,/g, '')) > currentPortpolio.total_cost)) {
+      console.log(Number(totalPrice.replace(/,/g, '')), '히히', currentPortpolio.total_cost)
       return;
     }
 
