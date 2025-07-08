@@ -4,7 +4,7 @@ import TotalBuyCoin from "./TotalBuyCoin";
 import { useAssetStore } from "@/store/assetStore";
 import { useMarketStore } from "@/store/marketStore";
 import PortfolioCoin from "./PortfolioCoin";
-import HoldingCointList from "./HoldingCoinList";
+import HoldingCoinList from "./HoldingCoinList";
 
 export default function HoldingsCoin() {
   const { assets, getDoughnutData } = useAssetStore();
@@ -42,7 +42,7 @@ export default function HoldingsCoin() {
           </div>
         </div>
 
-        <HoldingCointList />
+        <HoldingCoinList />
       </div>
     </main>
   )

@@ -1,62 +1,192 @@
-
 import { format } from "date-fns";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import axios from "axios";
 
-export default function ProfitLossNum() {
-  const [selectedPeriod, setSelectedPeriod] = useState("1개월");
-  const period = ['1주일', '1개월', '3개월', '직접입력'];
-  const [periodNum, setPeriodNum] = useState(30);
+interface PortfolioItem {
+  name: string;
+  quantity: number;
+  average_cost: number;
+}
 
-  const default_sTime = new Date();
-  const default_eTime = new Date(default_sTime.getTime() - periodNum * 24 * 60 * 60 * 1000);
+interface ProfitLossData {
+  cumulativeProfitLoss: number;
+  cumulativeProfitLossRate: number;
+  averageInvestment: number;
+}
 
-  const setPeriod = (period: string) => {
-      setSelectedPeriod(period);
-      if (period === "1주일") setPeriodNum(7);
-      if (period === "1개월") setPeriodNum(30);
-      if (period === "3개월") setPeriodNum(90);
-    }
-    
-    return (
-        <div className="flex flex-col space-y-4">
-          <div className="flex justify-start space-x-4">
-            <div className="flex space-x-4">
-              <span className="text-sm text-gray-500">기간</span>
-              <span className="text-sm text-gray-500">{`${format(default_sTime, 'yyyy.MM.dd')} - ${format(default_eTime, 'yyyy.MM.dd')}`}</span>
-            </div>
-            <div className="flex space-x-2">
-              {period.map((p) => (
-                <button
-                  key={p}
-                  onClick={() => setPeriod(p)}
-                  className={`px-3 py-1 text-xs border rounded 
-                    ${selectedPeriod == p ? "bg-blue-50 border-blue-300 text-blue-600" : "border-gray-300 text-gray-600 hover:bg-gray-50"}`} 
-                >{p}</button>
-              ))}
-            </div>
+interface ProfitLossNumProps {
+  data: ProfitLossData;
+}
+
+function ProfitLossNum({ data }: ProfitLossNumProps) {
+  return (
+    <div className="flex flex-col space-y-4">
+      <div className="grid grid-cols-2 gap-2 ml-8 my-6 items-center">
+        <div className="flex flex-col items-start space-y-3 self-start">
+          <span className="text-gray-500 font-medium">기간 누적 손익</span>
+          <div className="flex space-x-2">
+            <p className="text-6xl font-bold text-blue-500">
+              {data.cumulativeProfitLoss.toLocaleString()}
+            </p>
+            <p className="text-gray-500 font-semibold text-xl self-end">KRW</p>
           </div>
-          <div className="grid grid-cols-2 gap-2 ml-8 my-6 items-center">
-            <div className="flex flex-col items-start space-y-3 self-start">
-              <span className="text-gray-500 font-medium">기간 누적 손익</span>
-              <div className="flex space-x-2">
-                <p className="text-6xl font-bold text-blue-500">-7,123,531</p>
-                <p className="text-gray-500 font-semibold text-xl self-end">KRW</p>
-              </div>
-            </div>
-            <div className="flex flex-col space-y-2 self-end">
-              <div className="flex flex-col items-start">
-                <span className="text-gray-500 font-medium">기간 누적 손익률</span>
-                <span className="text-blue-500 font-semibold my-2">-6.25%</span>
-              </div>
-              <div className="flex flex-col items-start">
-                <span className="text-gray-500 font-medium">기간 평균 투자 금액</span>
-                <div className="space-x-1">
-                  <span className="font-semibold">90,343,123</span>
-                  <span className="text-gray-500 font-semibold">KRW</span>
-                </div>
-              </div>
+        </div>
+        <div className="flex flex-col space-y-2 self-end">
+          <div className="flex flex-col items-start">
+            <span className="text-gray-500 font-medium">기간 누적 손익률</span>
+            <span className="text-blue-500 font-semibold my-2">
+              {`${data.cumulativeProfitLossRate.toFixed(2)}%`}
+            </span>
+          </div>
+          <div className="flex flex-col items-start">
+            <span className="text-gray-500 font-medium">기간 평균 투자 금액</span>
+            <div className="space-x-1">
+              <span className="font-semibold">
+                {data.averageInvestment.toLocaleString()}
+              </span>
+              <span className="text-gray-500 font-semibold">KRW</span>
             </div>
           </div>
         </div>
-    )
+      </div>
+    </div>
+  );
+}
+
+export default function ProfitLoss() {
+  const periodOptions = ["1주일", "1개월", "3개월", "직접입력"];
+  const [selectedPeriod, setSelectedPeriod] = useState("1개월");
+  const [periodNum, setPeriodNum] = useState(30);
+  const [startDate, setStartDate] = useState<Date | null>(null);
+  const [endDate, setEndDate] = useState<Date | null>(null);
+
+  const [data, setData] = useState<ProfitLossData | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const setPeriod = (p: string) => {
+    setSelectedPeriod(p);
+    switch (p) {
+      case "1주일":
+        setPeriodNum(7);
+        break;
+      case "1개월":
+        setPeriodNum(30);
+        break;
+      case "3개월":
+        setPeriodNum(90);
+        break;
+      case "직접입력":
+        // TODO: 직접입력 기능 구현 예정
+        break;
+      default:
+        setPeriodNum(30);
+    }
+  };
+
+  const defaultData: ProfitLossData = {
+    cumulativeProfitLoss: 0,
+    cumulativeProfitLossRate: 0,
+    averageInvestment: 0,
+  };
+
+  // 기간이 변경될 때마다 시작일과 종료일 계산
+  useEffect(() => {
+    const now = new Date();
+    const before = new Date(now.getTime() - periodNum * 24 * 60 * 60 * 1000);
+    setStartDate(before);
+    setEndDate(now);
+  }, [periodNum]);
+
+  // 데이터 fetch (portfolio, 현재가격 등)
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const portfolioRes = await axios.get<{ portfolio: PortfolioItem[] }>("/portfolio/profit-loss");
+        const portfolio = portfolioRes.data.portfolio;
+
+        if (!portfolio || portfolio.length === 0) {
+          setData(null);
+          setLoading(false);
+          return;
+        }
+
+        const symbols = portfolio.map((item) => item.name).join(",");
+
+        const pricesRes = await axios.get<{ prices: Record<string, number> }>("/api/v1/portfolio", {
+          params: { symbols },
+        });
+        const prices = pricesRes.data.prices;
+
+        const totalInvestment = portfolio.reduce(
+          (acc, item) => acc + item.average_cost * item.quantity,
+          0
+        );
+
+        const cumulativeProfitLoss = portfolio.reduce((acc, item) => {
+          const currentPrice = prices[item.name] ?? 0;
+          return acc + (currentPrice - item.average_cost) * item.quantity;
+        }, 0);
+
+        const cumulativeProfitLossRate =
+          totalInvestment === 0 ? 0 : (cumulativeProfitLoss / totalInvestment) * 100;
+
+        const averageInvestment = periodNum === 0 ? 0 : totalInvestment / periodNum;
+
+        setData({
+          cumulativeProfitLoss,
+          cumulativeProfitLossRate,
+          averageInvestment,
+        });
+      } catch (e) {
+        setError("데이터를 불러오는 중 오류가 발생했습니다.");
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [periodNum]);
+
+  return (
+    <div className="flex flex-col space-y-4">
+      {/* 기간 선택 및 날짜 표시 */}
+      <div className="flex justify-start space-x-4">
+        <div className="flex space-x-4">
+          <span className="text-sm text-gray-500">기간</span>
+          {startDate && endDate ? (
+            <span className="text-sm text-gray-500">
+              {`${format(startDate, "yyyy.MM.dd")} - ${format(endDate, "yyyy.MM.dd")}`}
+            </span>
+          ) : (
+            <span className="text-sm text-gray-400">날짜 계산 중...</span>
+          )}
+        </div>
+
+        <div className="flex space-x-2">
+          {periodOptions.map((p) => (
+            <button
+              key={p}
+              onClick={() => setPeriod(p)}
+              className={`px-3 py-1 text-xs border rounded ${
+                selectedPeriod === p
+                  ? "bg-blue-50 border-blue-300 text-blue-600"
+                  : "border-gray-300 text-gray-600 hover:bg-gray-50"
+              }`}
+            >
+              {p}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* 로딩, 에러, 데이터 컴포넌트 렌더링 */}
+      {loading && <div>로딩중...</div>}
+      {error && <div className="text-red-500">{error}</div>}
+      {!loading && !error && <ProfitLossNum data={data ?? defaultData} />}
+    </div>
+  );
 }
