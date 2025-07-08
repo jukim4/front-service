@@ -3,17 +3,27 @@
 import { useState, useEffect } from "react"
 import { Info } from "lucide-react"
 import { useMarketStore } from "@/store/marketStore"
-import { setMaxIdleHTTPParsers } from "http";
 
 import { apiClient } from "@/lib/apiClient";
+import { useAuthStore } from "@/store/authStore";
+
+type PortfolioItem = {
+  name: string;
+  quantity: number;
+  average_cost: number;
+  total_cost: number;
+}
 
 export default function TradeForm() {
   const { tickers, selectedMarket } = useMarketStore();
+
   const [activeTab, setActiveTab] = useState("매수")
   const [price, setPrice] = useState("")
   const [selectedPercentage, setSelectedPercentage] = useState("0%");
   const [ totalPrice, setTotalPrice ] = useState('0');
   const [ coinCnt, setCoinCnt ] = useState(0);
+  const [ holdings_coin, setHoldingsCoin] = useState('');
+  const [ currentPortpolio, setcurrentPortpolio ] = useState({name: selectedMarket, quantity: 0, average_cost: 0, total_cost: 0});
 
   const [inputMode, setInputMode] = useState<'total' | 'count'>("total");
 
@@ -37,19 +47,30 @@ export default function TradeForm() {
         percent = parseFloat(selectedPercentage) / 100;
       }
       const result = currentPrice * (1 + percent);
-      setPrice(new Intl.NumberFormat('ko-KR').format(Number(result.toFixed(8))));
+      setPrice(new Intl.NumberFormat('ko-KR').format(Number(result)));
       setInputMode('count');
+      return;
     }
     setCoinCnt(0);
     setTotalPrice('0');
-  }, [selectedMarket, selectedPercentage]);
+  }, [selectedPercentage]);
+
+  useEffect(() => {
+    const currentPrice = tickers[selectedMarket]?.trade_price;
+    const value = isNaN(Number(currentPrice)) || currentPrice == null ? 0 : Number(currentPrice);
+    setPrice(new Intl.NumberFormat('ko-KR').format(value));
+    setCoinCnt(0);
+    setTotalPrice('0');
+
+    getPortfolio();
+  }, [selectedMarket])
 
   useEffect(() => {
     if (inputMode !== 'total') return;
     const result = Number(price.replace(/,/g, ''));
     const total = parseFloat(totalPrice.replace(/,/g, ''));
     if(!isNaN(result) && result > 0 && !isNaN(total)) {
-      setCoinCnt(Number((total/result).toFixed(8)));
+      setCoinCnt(Number((total/result)));
     } else {
       setCoinCnt(0);
     }
@@ -66,63 +87,107 @@ export default function TradeForm() {
     }
   }, [price, coinCnt, inputMode])
 
+   useEffect(() => {
+    if (!useAuthStore.getState().isAuthenticated) return;
+      fetchAsset();
+  }, []);
+
+  // 선택된 마켓의 보유 코인 개수
+  const getPortfolio = async () => {
+    const portfolio: PortfolioItem[] = await apiClient.userPorfolio();
+    const filterPortfolio = portfolio.filter((item) => item.name === selectedMarket)
+    if (filterPortfolio.length !== 0 ){
+      setcurrentPortpolio(filterPortfolio[0]);
+    } else {
+      setcurrentPortpolio({name: selectedMarket, quantity: 0, average_cost: 0, total_cost: 0});
+    }
+  }
+
+  const fetchAsset = async () => {
+    const asset = await apiClient.userInfo();
+    setHoldingsCoin(new Intl.NumberFormat('ko-KR').format(Number(asset.asset)));
+  };
+
   const submitOrders = async (tab: string): Promise<void> => {
+    if (!useAuthStore.getState().isAuthenticated) {
+      alert("로그인 후에 이용 가능한 서비스입니다")
+      return;
+    }
+
+    // 최소 결제 금액
+    if ( (activeTab === '매도' && selectedPosition === '시장가' && Number(totalPrice.replace(/,/g, '')) > currentPortpolio.quantity)) {
+
+      if (( Number(totalPrice.replace(/,/g, '')) < 5000 
+    || activeTab==='매도' && selectedPosition !== '시장가' && Number(totalPrice.replace(/,/g, '')) > currentPortpolio.total_cost)) {
+        return;
+      }
+      return;
+    }
+
     const coin_ticker = selectedMarket.split('-')[1]
     const total = parseFloat(totalPrice.replace(/,/g, ''));
     const orderPrice = parseFloat(price.replace(/,/g, ''));
+    const orderType = tab === '매수' ? 'buy' : 'sell';
 
+    
     if (selectedPosition === '시장가') {
-      if (tab === '매수') {
+      if (activeTab === '매수') {
         try {
           const result = await apiClient.orderMarket(coin_ticker, 'buy', total, selectedMarket);
-          
-          if (result.success) {
-            alert(result.message);
+            
+          if(result.success) {
+            alert(result.message)
+            fetchAsset();
           } else {
-            alert(result.message);
+            alert(result.message)
           }
         } catch(err) {
           console.error("error", err);
         } 
-      } else {
+      } else if(activeTab === '매도') {
         try {
-          const result = await apiClient.orderMarket(coin_ticker, 'sell', coinCnt, selectedMarket);
-          
-          if (result.success) {
-            alert(result.message);
+          const result = await apiClient.orderMarket(coin_ticker, 'sell', total, selectedMarket);
+            
+          if(result.success) {
+            alert(result.message)
+            fetchAsset();
           } else {
-            alert(result.message);
+            alert(result.message)
           }
         } catch(err) {
           console.error("error", err);
-        }
+        } 
       }
     } else if(selectedPosition === '지정가') {
-      if (tab === "매수") {
         try {
-          const result = await apiClient.orderLimit(selectedMarket, coin_ticker, orderPrice, 'buy', coinCnt, total)
+          const result = await apiClient.orderLimit(selectedMarket, coin_ticker, orderPrice, orderType, coinCnt, total)
+
           if (result.success) {
             alert(result.message);
+            fetchAsset();
           } else {
             alert(result.message);
           }
         } catch(err) {
           console.error("error", err);
         } 
-      }
-    } else {
-      try {
-          const result = await apiClient.orderLimit(selectedMarket, coin_ticker, orderPrice, 'buy', coinCnt, total)
-          if (result.success) {
-            alert(result.message);
-          } else {
-            alert(result.message);
-          }
-        } catch(err) {
-          console.error("error", err);
-        } 
-      }
     }
+
+    setTotalPrice('0');
+    setCoinCnt(0);
+    setInputMode('total');
+
+    getPortfolio();
+ }
+
+ // 초기화
+ const resetPrice = ():void => {
+  const currentPrice = tickers[selectedMarket]?.trade_price;
+  setTotalPrice('0');
+  setCoinCnt(0);
+  setPrice(new Intl.NumberFormat('ko-KR').format(Number(currentPrice)));
+  setSelectedPercentage("0%");
+ }
 
   return (
     <div className="w-full bg-white border rounded-md">
@@ -170,11 +235,27 @@ export default function TradeForm() {
       {/* Available Balance */}
       <div className="px-4 py-2 flex justify-between">
         <span className="text-sm">주문가능</span>
-        <span className="text-sm font-medium">0 KRW</span>
+        <span className="text-sm font-medium">{holdings_coin} KRW</span>
       </div>
 
+
+      {(activeTab === '매도' && selectedPosition === '시장가')? (
+          <div className="px-4 py-2 flex justify-between">
+            <span className="text-sm">보유코인</span>
+            <span className="text-sm font-medium">{ currentPortpolio.quantity}</span>
+          </div>
+      ): <div className="px-4 py-2 flex justify-between">
+        <span className="text-sm">보유</span>
+        <span className="text-sm font-medium">{ currentPortpolio.total_cost} KRW</span>
+      </div>
+    }
+
       {/* Price Input */}
-      <div className="px-4 py-2">
+      {(activeTab === '매도' && selectedPosition === '시장가')? (
+        <div></div>
+      ):
+      <div>
+        <div className="px-4 py-2">
         <div className="flex items-center mb-1">
           <span className="text-sm">{activeTab === "매수" ? "매수가격" : "매도가격"} (KRW)</span>
         </div>
@@ -182,9 +263,17 @@ export default function TradeForm() {
           <input
             type="text"
             value={price}
-            onChange={(e) => {setPrice(e.target.value); setInputMode('count');}}
+            onChange={(e) => {
+              let value = e.target.value.replace(/[^0-9.]/g, '');
+              const parts = value.split('.');
+              if (parts.length > 2) {
+                value = parts[0] + '.' + parts.slice(1).join('');
+              }
+              setPrice(value); setInputMode('count');}}
             className="flex-1 border rounded-l p-2 text-right"
             placeholder="가격을 입력하세요"
+            inputMode="decimal"
+            pattern="[0-9.]*"
           />
           <div className="flex border-t border-r border-b rounded-r">
             <button 
@@ -209,7 +298,6 @@ export default function TradeForm() {
         </div>
       </div>
 
-      {/* Percentage Buttons */}
       <div className="px-4 py-2 grid grid-cols-5 gap-2">
         {percentages.map((percent) => (
           <button
@@ -223,18 +311,31 @@ export default function TradeForm() {
           </button>
         ))}
       </div>
+      </div>
+      }
+      
 
       {/* Total */}
       <div className="px-4 py-2">
         <div className="flex items-center mb-1">
-          <span className="text-sm">주문총액 (KRW)</span>
+          {(activeTab === '매도' && selectedPosition === '시장가')?
+          (<span className="text-sm">주문수량</span>):
+          <span className="text-sm">주문총액 (KRW)</span>}
         </div>
         <input type="text" value={totalPrice} className="w-full border rounded p-2 text-right"
          onChange={e => {
-           const value = Number(e.target.value.replace(/,/g, ''));
-           setTotalPrice(new Intl.NumberFormat('ko-KR').format(Number(value.toFixed(0))));
+           let value = e.target.value.replace(/[^0-9.]/g, '');
+           const parts = value.split('.');
+           if (parts.length > 2) {
+            value = parts[0] + '.' + parts.slice(1).join('');
+           }
+
+           const num = value === '' ? '0' : value;
+           setTotalPrice(num);
            setInputMode('total');
-         }} />
+         }}
+         inputMode="decimal"
+         pattern="[0-9.]*" />
       </div>
 
       {/* Fee Info */}
@@ -244,7 +345,7 @@ export default function TradeForm() {
 
       {/* Action Buttons */}
       <div className="px-4 py-2 grid grid-cols-2 gap-2">
-        <button className="py-3 bg-gray-400 text-white rounded">초기화</button>
+        <button className="py-3 bg-gray-400 text-white rounded" onClick={resetPrice}>초기화</button>
         <button 
           className={`py-3 text-white rounded ${
             activeTab === "매수" ? "bg-red-500" : "bg-blue-500"
