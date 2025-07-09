@@ -1,20 +1,82 @@
 "use client"
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Card, CardContent } from "@/components/ui/card"
-import { useRouter } from "next/navigation"
-import MarketListCompoenet from "@/components/MarketListComponent"
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent } from "@/components/ui/card";
+import { useRouter } from "next/navigation";
+import MarketListComponent from "@/components/MarketListComponent";
+
+
+type Order = {
+  id: string;
+  orderPosition: "BUY" | "SELL";
+  status: string;
+  marketCode: string;
+  watchPrice?: number;
+  orderPrice: number;
+  totalQuantity: number;
+  pendingQuantity?: number;
+  orderRequestedAt: string;
+};
 
 export default function WaitOrders() {
   const router = useRouter();
-  const [orderType, setOrderType] = useState("전체주문")
+  const [orderType, setOrderType] = useState("전체주문");
   const [activeTab, setActiveTab] = useState("미체결");
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set()); // 선택된 주문 ID를 추적하는 Set
+
+  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+
+  // 더미 데이터 추가
+  const fetchPendingOrders = async () => {
+    const dummyData = [
+      {
+        id: "1",
+        orderPosition: "BUY",
+        status: "PENDING",
+        marketCode: "BTC/USD",
+        watchPrice: 50000,
+        orderPrice: 49000,
+        totalQuantity: 1.5,//거래 수량
+        pendingQuantity: 1.0, 
+        orderRequestedAt: "2025-07-09T10:00:00",
+      },
+      {
+        id: "2",
+        orderPosition: "SELL",
+        status: "PENDING",
+        marketCode: "ETH/USD",
+        watchPrice: 3000,
+        orderPrice: 2900,
+        totalQuantity: 2,
+        pendingQuantity: 2,
+        orderRequestedAt: "2025-07-09T11:00:00",
+      },
+      {
+        id: "3",
+        orderPosition: "BUY",
+        status: "PENDING",
+        marketCode: "SOL/USD",
+        watchPrice: 100,
+        orderPrice: 95,
+        totalQuantity: 10,
+        pendingQuantity: 5,
+        orderRequestedAt: "2025-07-09T12:00:00",
+      },
+    ];
+    setOrders(dummyData); // 더미 데이터 상태에 설정
+  };
+
+  useEffect(() => {
+    fetchPendingOrders();
+  }, []);
 
   const tabs = ["거래내역", "미체결"];
 
   const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
     if (tab === "거래내역") {
       router.push('/investments/transaction-history');
     } else {
@@ -22,9 +84,36 @@ export default function WaitOrders() {
     }
   };
 
+  // 주문 유형별 필터링 (전체, 매수, 매도)
+  const filteredOrders = orders.filter(order => {
+    if (orderType === "전체주문") return true;
+    if (orderType === "매수주문") return order.orderPosition === "BUY";
+    if (orderType === "매도주문") return order.orderPosition === "SELL";
+    return true;
+  });
+
+  // 체크박스를 클릭할 때의 동작
+  const handleSelectOrder = (id: string) => {
+    const newSelectedOrders = new Set(selectedOrders);
+    if (newSelectedOrders.has(id)) {
+      newSelectedOrders.delete(id);
+    } else {
+      newSelectedOrders.add(id);
+    }
+    setSelectedOrders(newSelectedOrders);
+  };
+
+  // 일괄 취소 버튼 클릭 시
+  const handleCancelSelectedOrders = () => {
+    // 선택된 주문들 처리 (예: 상태 변경, API 호출 등)
+    console.log("취소할 주문들: ", Array.from(selectedOrders));
+
+    // 선택된 주문들을 취소 처리 후, 선택된 주문 리스트 초기화
+    setSelectedOrders(new Set());
+  };
+
   return (
     <main className="grid grid-cols-3 gap-2 min-h-screen p-4 md:p-8 bg-gray-50">
-      {/* Left section - 2/3 width (2 columns) */}
       <div className="col-span-2 flex flex-col gap-2">
         <div className="border rounded-md overflow-hidden bg-white">
           <div className="w-full max-w-6xl mx-auto p-4 bg-white">
@@ -34,11 +123,10 @@ export default function WaitOrders() {
                 <button
                   key={tab}
                   onClick={() => handleTabChange(tab)}
-                  className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
-                    activeTab === tab
+                  className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === tab
                       ? "text-blue-600 border-blue-600"
                       : "text-gray-500 border-transparent hover:text-gray-700"
-                  }`}
+                    }`}
                 >
                   {tab}
                 </button>
@@ -57,7 +145,11 @@ export default function WaitOrders() {
                   <SelectItem value="매도주문">매도주문</SelectItem>
                 </SelectContent>
               </Select>
-              <Button variant="outline" className="bg-gray-100 text-gray-700 hover:bg-gray-200">
+              <Button
+                variant="outline"
+                className="bg-gray-100 text-gray-700 hover:bg-gray-200"
+                onClick={handleCancelSelectedOrders}
+              >
                 일괄취소
               </Button>
             </div>
@@ -70,36 +162,51 @@ export default function WaitOrders() {
                     <thead className="bg-gray-50 border-b">
                       <tr>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          시간
+                          <input
+                            type="checkbox"
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedOrders(new Set(filteredOrders.map(order => order.id)));
+                              } else {
+                                setSelectedOrders(new Set());
+                              }
+                            }}
+                          />
                         </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          미체결
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          거래종목
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          감시가격
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          주문가격
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          주문수량
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          미체결량
-                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">시간</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">미체결</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">거래종목</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">감시가격</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">주문가격</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">주문수량</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">미체결량</th>
                       </tr>
                     </thead>
                     <tbody>
-                      <tr>
-                        <td colSpan={7} className="px-4 py-16 text-center">
-                          <div className="flex flex-col items-center space-y-2">
-                            <span className="text-gray-500">미체결 주문이 없습니다.</span>
-                          </div>
-                        </td>
-                      </tr>
+                      {filteredOrders.length === 0 ? (
+                        <tr>
+                          <td colSpan={8} className="px-4 py-16 text-center text-gray-500">미체결 주문이 없습니다.</td>
+                        </tr>
+                      ) : (
+                        filteredOrders.map((order) => (
+                          <tr key={order.id}>
+                            <td className="px-4 py-2">
+                              <input
+                                type="checkbox"
+                                checked={selectedOrders.has(order.id)}
+                                onChange={() => handleSelectOrder(order.id)}
+                              />
+                            </td>
+                            <td className="px-4 py-2">{new Date(order.orderRequestedAt).toLocaleString()}</td>
+                            <td className="px-4 py-2 text-gray-500">{order.status}</td>
+                            <td className="px-4 py-2">{order.marketCode}</td>
+                            <td className="px-4 py-2">{order.watchPrice}</td>
+                            <td className="px-4 py-2">{order.orderPrice}</td>
+                            <td className="px-4 py-2">{order.totalQuantity}</td>
+                            <td className="px-4 py-2">{order.pendingQuantity}</td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -111,7 +218,7 @@ export default function WaitOrders() {
 
       {/* Right section - 1/3 width (1 column) */}
       <div className="relative col-span-1">
-        <MarketListCompoenet></MarketListCompoenet>
+        <MarketListComponent />
       </div>
     </main>
   )

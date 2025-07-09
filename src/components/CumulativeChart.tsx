@@ -1,7 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
 import Chart from "chart.js/auto";
 import axios from "axios";
-import { useProfitLossStore } from "../store/useProfitLossStore";
+import { useProfitLossStore } from '@/store/ProfitLossStore';
+
+
 
 
 interface PortfolioItem {
@@ -32,7 +34,6 @@ export default function CumulativeChart() {
 
         const baseUrl = process.env.NEXT_PUBLIC_URL;
         await axios.get<PortfolioItem[]>(`${baseUrl}/api/v1/portfolio`, {
-          withCredentials: true,
           headers: {
             Authorization: `Bearer ${accessToken}`,
             "Content-Type": "application/json",
@@ -102,13 +103,13 @@ export default function CumulativeChart() {
   }, [cumulativeProfitLossRate]);
 
   return (
-  <div className="w-[400px] h-[400px] flex justify-center items-center">
-    {loading ? (
-      <div className="animate-spin rounded-full h-8 w-8 border-4 border-blue-500 border-t-transparent" />
-    ) : (
-      <canvas ref={canvasRef} width={400} height={400} />
-    )}
-  </div>
-);
+    <div className="w-[400px] h-[400px] flex justify-center items-center">
+      {loading ? (
+        <div className="animate-spin rounded-full h-8 w-8 border-4 border-blue-500 border-t-transparent" />
+      ) : (
+        <canvas ref={canvasRef} width={400} height={400} />
+      )}
+    </div>
+  );
 
 }

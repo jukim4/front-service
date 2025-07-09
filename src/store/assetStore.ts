@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { useEffect } from 'react';
 import axios from 'axios';
 
-// Asset 타입
+// Asset 타입 정의
 interface Asset {
   marketCode: string;
   marketName: string;
@@ -11,7 +11,7 @@ interface Asset {
   totalCost: number;
 }
 
-// Zustand 스토어 정의
+// Zustand 스토어 타입 정의
 interface AssetState {
   assets: Asset[];
   holdings: number;
@@ -20,9 +20,13 @@ interface AssetState {
 
   getCurrentPrice: (market: string, tickers: Record<string, any>) => number;
   getTotalValuation: (assets: Asset[], tickers: Record<string, any>) => number[];
-  getDoughnutData: (assets: Asset[], tickers: Record<string, any>) => { label: string; data: number }[];
+  getDoughnutData: (
+    assets: Asset[],
+    tickers: Record<string, any>
+  ) => { label: string; data: number }[];
 }
 
+// Zustand 스토어 구현
 export const useAssetStore = create<AssetState>((set, get) => ({
   assets: [],
   holdings: 0,
@@ -50,19 +54,15 @@ export const useAssetStore = create<AssetState>((set, get) => ({
   },
 
   getDoughnutData: (assets: Asset[], tickers: Record<string, any>) => {
-    const { getCurrentPrice, getTotalValuation } = get();
-    const [, totalValuation] = getTotalValuation(assets, tickers);
+    if (!assets || !tickers) return [];
 
-    if (totalValuation === 0) return [];
+    const total = assets.reduce((sum, asset) => sum + asset.totalCost, 0);
+    if (total === 0) return [];
 
-    return assets.map((asset) => {
-      const current = getCurrentPrice(asset.marketCode, tickers);
-      const value = current * asset.quantity;
-      return {
-        label: asset.marketCode, 
-        data: Math.round((value / totalValuation) * 10000) / 100,
-      };
-    });
+    return assets.map((asset) => ({
+      label: asset.marketName,
+      data: parseFloat(((asset.totalCost / total) * 100).toFixed(2)), // 비중(%)
+    }));
   },
 }));
 
@@ -71,38 +71,31 @@ export const useFetchPortfolio = () => {
   const setAssets = useAssetStore((state) => state.setAssets);
 
   useEffect(() => {
-    const fetchPortfolio = async () => {
-      try {
-        const accessToken = localStorage.getItem('accessToken');
-        if (!accessToken) {
-          console.error('Access token이 없습니다.');
-          return;
-        }
+    // 실제 API 호출 대신 더미 데이터 사용
+    const dummyAssets = [
+      {
+        marketCode: 'BTC',
+        marketName: 'Bitcoin',
+        quantity: 1.5,
+        averageCost: 30000,
+        totalCost: 45000,
+      },
+      {
+        marketCode: 'ETH',
+        marketName: 'Ethereum',
+        quantity: 10,
+        averageCost: 2000,
+        totalCost: 20000,
+      },
+      {
+        marketCode: 'XRP',
+        marketName: 'Ripple',
+        quantity: 500,
+        averageCost: 0.5,
+        totalCost: 250,
+      },
+    ];
 
-        const res = await axios.get('/api/v1/portfolio', {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
-          },
-          withCredentials: true,
-        });
-
-        const data = res.data?.data ?? [];
-
-        const formattedAssets: Asset[] = data.map((item: any) => ({
-          marketCode: item.marketCode,
-          marketName: item.marketCode,
-          quantity: parseFloat(item.quantity ?? 0),
-          averageCost: item.averageCost ?? 0,
-          totalCost: item.totalCost ?? 0,
-        }));
-
-        setAssets(formattedAssets);
-      } catch (error) {
-        console.error('Failed to fetch portfolio:', error);
-      }
-    };
-
-    fetchPortfolio();
+    setAssets(dummyAssets);
   }, []);
 };

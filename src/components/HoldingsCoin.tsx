@@ -4,7 +4,7 @@ import TotalBuyCoin from "./TotalBuyCoin";
 import { useAssetStore } from "@/store/assetStore";
 import { useMarketStore } from "@/store/marketStore";
 import PortfolioCoin from "./PortfolioCoin";
-import HoldingCoinList from "./HoldingCoinList";
+import HoldingCointList from "./HoldingCoinList";
 
 export default function HoldingsCoin() {
   const { assets, getDoughnutData } = useAssetStore();
@@ -19,7 +19,7 @@ export default function HoldingsCoin() {
         <div className="mt-8">
           <p className="text-xl font-semibold mb-4 ml-4">보유 코인 포트폴리오</p>
 
-          <div className="mt-4 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+          <div className="mt-4 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
             {/* 도넛 차트 */}
             <div className="w-full flex justify-center">
               <div className="w-full md:w-2/3 max-w-full aspect-square relative">
@@ -32,7 +32,7 @@ export default function HoldingsCoin() {
             </div>
 
             {/* 차트 데이터 */}
-            <div className="w-full md:w-1/2">
+            <div className="w-full md:w-1/3 aspect-square">
               <PortfolioCoin
                 uid={1}
                 datas={getDoughnutData(assets, tickers)}
@@ -42,7 +42,7 @@ export default function HoldingsCoin() {
           </div>
         </div>
 
-        <HoldingCoinList />
+        <HoldingCointList />
       </div>
     </main>
   )

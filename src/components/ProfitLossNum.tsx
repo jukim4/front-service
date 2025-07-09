@@ -1,7 +1,8 @@
 import { format } from "date-fns";
 import { useState, useEffect } from "react";
 import axios from "axios";
-import { useProfitLossStore } from "../store/useProfitLossStore";
+import { useProfitLossStore } from '@/store/ProfitLossStore';
+
 
 
 interface PortfolioItem {
@@ -172,11 +173,10 @@ export default function ProfitLossWrapper() {
             <button
               key={p}
               onClick={() => setPeriod(p)}
-              className={`px-3 py-1 text-xs border rounded ${
-                selectedPeriod === p
+              className={`px-3 py-1 text-xs border rounded ${selectedPeriod === p
                   ? "bg-blue-50 border-blue-300 text-blue-600"
                   : "border-gray-300 text-gray-600 hover:bg-gray-50"
-              }`}
+                }`}
             >
               {p}
             </button>
