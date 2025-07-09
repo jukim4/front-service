@@ -11,6 +11,7 @@ import SearchBar from '@/components/SearchBar';
 import MarketTabs from '@/components/MarketTabs';
 import MarketSortBar from '@/components/MarketSortBar';
 import MarketList from '@/components/MarketList';
+import MarketListCompoenet from "@/components/MarketListComponent"
 
 export default function Holdings() {
   const router = useRouter();
@@ -44,8 +45,8 @@ export default function Holdings() {
                 key={tab}
                 onClick={() => handleTabChange(tab)}
                 className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === tab
-                    ? "text-blue-600 border-blue-600"
-                    : "text-gray-500 border-transparent hover:text-gray-700"
+                  ? "text-blue-600 border-blue-600"
+                  : "text-gray-500 border-transparent hover:text-gray-700"
                   }`}
               >
                 {tab}
@@ -90,7 +91,7 @@ export default function Holdings() {
         )}
       </div>
 
-      {/* Right (검색 및 마켓 영역) */}
+      {/* Right section - 1/3 width (1 column) */}
       <div className="relative col-span-1">
         <MarketListCompoenet></MarketListCompoenet>
       </div>
