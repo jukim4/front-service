@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import { useProfitLossStore } from "../store/useProfitLossStore";
 
+
 interface PortfolioItem {
   name: string;
   quantity: number;

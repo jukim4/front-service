@@ -5,11 +5,11 @@ import { useRef, useState } from "react";
 import CumulativeChart from "./CumulativeChart";
 import ProfitLossChart from "./ProfitLossChart";
 import ProfitLossWrapper from "./ProfitLossNum"; // 변경된 이름 사용
-
+import SearchBar from '@/components/SearchBar';
 import MarketSortBar from "@/components/MarketSortBar";
 import MarketListCompoenet from "./MarketListComponent";
 import { useRouter } from "next/navigation";
-
+import MarketTabs from "./MarketTabs";
 export default function ProfitLossPage() {
   const [activeTab, setActiveTab] = useState("투자손익");
   const tabs = ["보유자산", "투자손익"];
@@ -18,7 +18,7 @@ export default function ProfitLossPage() {
   const handleTabChange = (tab: string) => {
     if (tab === "보유자산") {
       router.push('/portfolio/holdings');
-    } else { 
+    } else {
       router.push('/portfolio/profit-loss');
     }
   }
@@ -29,50 +29,39 @@ export default function ProfitLossPage() {
         <div className="w-full max-w-6xl mx-auto pt-4 bg-white px-4 p-4">
           <div className="flex border-b border-gray-200 mb-6">
             {tabs.map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => handleTabChange(tab)}
-                  className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
-                    activeTab === tab
-                      ? "text-blue-600 border-blue-600"
-                      : "text-gray-500 border-transparent hover:text-gray-700"
+              <button
+                key={tab}
+                onClick={() => handleTabChange(tab)}
+                className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === tab
+                    ? "text-blue-600 border-blue-600"
+                    : "text-gray-500 border-transparent hover:text-gray-700"
                   }`}
-                >
-                  {tab}
-                </button>
-              ))}
-            </div>
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="flex flex-col space-y-4 w-full max-w-6xl mx-auto px-4 bg-white">
-  <ProfitLossWrapper />
+          <ProfitLossWrapper />
 
-  <div className="flex flex-col space-y-4">
-    <span className="text-gray-500 font-medium">투자손익 그래프</span>
+          <div className="flex flex-col space-y-4">
+            <span className="text-gray-500 font-medium">투자손익 그래프</span>
 
-    <div className="grid grid-cols-2 gap-4">
-      <CumulativeChart />
-      <ProfitLossChart />
-    </div>
-  </div>
-</div>
-
-      </div>
-
-      <div className="relative col-span-1">
-        <div className="sticky top-4 flex h-[calc(100vh-2rem)] flex-col gap-2">
-          <div className="flex-shrink-0">
-            <SearchBar />
-            <div className="mt-2 rounded-t-md border-x border-t bg-white">
-              <MarketTabs />
-              <MarketSortBar />
+            <div className="grid grid-cols-2 gap-4">
+              <CumulativeChart />
+              <ProfitLossChart />
             </div>
           </div>
-          <div className="flex-1 rounded-b-md border-x border-b bg-white overflow-y-auto">
-            <MarketList />
-          </div>
         </div>
+
       </div>
-    </main>
+
+      {/* Right section - 1/3 width (1 column) */}
+            <div className="relative col-span-1">
+              <MarketListCompoenet></MarketListCompoenet>
+            </div>
+          </main>
   );
 }
