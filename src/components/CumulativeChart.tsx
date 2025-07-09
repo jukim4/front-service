@@ -1,6 +1,8 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Chart from "chart.js/auto";
 import axios from "axios";
+import { useProfitLossStore } from "../store/useProfitLossStore";
+
 
 interface PortfolioItem {
   name: string;
@@ -9,8 +11,10 @@ interface PortfolioItem {
 }
 
 export default function CumulativeChart() {
-  // useRef로 차트 인스턴스 관리
   const chartRef = useRef<Chart | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [loading, setLoading] = useState(true);
+  const { cumulativeProfitLossRate } = useProfitLossStore();
 
   const getAccessToken = (): string | null => {
     return localStorage.getItem("accessToken");
@@ -18,6 +22,7 @@ export default function CumulativeChart() {
 
   useEffect(() => {
     const fetchData = async () => {
+      setLoading(true);
       try {
         const accessToken = getAccessToken();
         if (!accessToken) {
@@ -25,42 +30,34 @@ export default function CumulativeChart() {
           return;
         }
 
-        const res = await axios.get<PortfolioItem[]>(
-          "http://localhost:8080/api/v1/portfolio",
-          {
-            withCredentials: true,
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-
-        const portfolio = res.data;
-        const averageCost = portfolio[0]?.average_cost ?? 0;
+        const baseUrl = process.env.NEXT_PUBLIC_URL;
+        await axios.get<PortfolioItem[]>(`${baseUrl}/api/v1/portfolio`, {
+          withCredentials: true,
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+        });
 
         const labels = ["7월", "8월", "9월", "10월", "11월", "12월"];
-        const data = [averageCost, 0, 0, 0, 0, 0];
+        const data = [cumulativeProfitLossRate, 0, 0, 0, 0, 0];
 
-        const canvas = document.getElementById("cumulative") as HTMLCanvasElement | null;
+        const canvas = canvasRef.current;
         if (!canvas) return;
         const ctx = canvas.getContext("2d");
         if (!ctx) return;
 
-        // 기존 차트가 있으면 파괴
         if (chartRef.current) {
           chartRef.current.destroy();
-          chartRef.current = null;
         }
 
-        // 새 차트 생성 및 저장
         chartRef.current = new Chart(ctx, {
           type: "line",
           data: {
             labels,
             datasets: [
               {
-                label: "누적 수익률 그래프",
+                label: "누적 수익률",
                 data,
                 borderColor: "#36A2EB",
                 backgroundColor: "rgba(54, 162, 235, 0.2)",
@@ -70,7 +67,7 @@ export default function CumulativeChart() {
             ],
           },
           options: {
-            responsive: false,
+            responsive: true,
             plugins: {
               legend: { display: false },
               title: {
@@ -82,7 +79,7 @@ export default function CumulativeChart() {
               y: {
                 beginAtZero: true,
                 ticks: {
-                  callback: (value: number | string) => value + "%",
+                  callback: (value: number | string) => `${value}%`,
                 },
               },
             },
@@ -90,18 +87,28 @@ export default function CumulativeChart() {
         });
       } catch (err) {
         console.error("백엔드 호출 실패", err);
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchData();
-
 
     return () => {
       if (chartRef.current) {
         chartRef.current.destroy();
       }
     };
-  }, []);
+  }, [cumulativeProfitLossRate]);
 
-  return null;
+  return (
+  <div className="w-[400px] h-[400px] flex justify-center items-center">
+    {loading ? (
+      <div className="animate-spin rounded-full h-8 w-8 border-4 border-blue-500 border-t-transparent" />
+    ) : (
+      <canvas ref={canvasRef} width={400} height={400} />
+    )}
+  </div>
+);
+
 }

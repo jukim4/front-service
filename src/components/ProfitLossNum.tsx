@@ -1,6 +1,7 @@
 import { format } from "date-fns";
 import { useState, useEffect } from "react";
 import axios from "axios";
+import { useProfitLossStore } from "../store/useProfitLossStore";
 
 interface PortfolioItem {
   name: string;
@@ -15,10 +16,16 @@ interface ProfitLossData {
 }
 
 interface ProfitLossNumProps {
-  data: ProfitLossData;
+  data?: ProfitLossData;
 }
 
 function ProfitLossNum({ data }: ProfitLossNumProps) {
+  const displayData = data || {
+    cumulativeProfitLoss: 0,
+    cumulativeProfitLossRate: 0,
+    averageInvestment: 0,
+  };
+
   return (
     <div className="flex flex-col space-y-4">
       <div className="grid grid-cols-2 gap-2 ml-8 my-6 items-center">
@@ -26,7 +33,7 @@ function ProfitLossNum({ data }: ProfitLossNumProps) {
           <span className="text-gray-500 font-medium">기간 누적 손익</span>
           <div className="flex space-x-2">
             <p className="text-6xl font-bold text-blue-500">
-              {data.cumulativeProfitLoss.toLocaleString()}
+              {displayData.cumulativeProfitLoss.toLocaleString()}
             </p>
             <p className="text-gray-500 font-semibold text-xl self-end">KRW</p>
           </div>
@@ -35,14 +42,14 @@ function ProfitLossNum({ data }: ProfitLossNumProps) {
           <div className="flex flex-col items-start">
             <span className="text-gray-500 font-medium">기간 누적 손익률</span>
             <span className="text-blue-500 font-semibold my-2">
-              {`${data.cumulativeProfitLossRate.toFixed(2)}%`}
+              {`${displayData.cumulativeProfitLossRate.toFixed(2)}%`}
             </span>
           </div>
           <div className="flex flex-col items-start">
             <span className="text-gray-500 font-medium">기간 평균 투자 금액</span>
             <div className="space-x-1">
               <span className="font-semibold">
-                {data.averageInvestment.toLocaleString()}
+                {displayData.averageInvestment.toLocaleString()}
               </span>
               <span className="text-gray-500 font-semibold">KRW</span>
             </div>
@@ -53,16 +60,16 @@ function ProfitLossNum({ data }: ProfitLossNumProps) {
   );
 }
 
-export default function ProfitLoss() {
+export default function ProfitLossWrapper() {
   const periodOptions = ["1주일", "1개월", "3개월", "직접입력"];
   const [selectedPeriod, setSelectedPeriod] = useState("1개월");
   const [periodNum, setPeriodNum] = useState(30);
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
-
   const [data, setData] = useState<ProfitLossData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { setCumulativeProfitLossRate } = useProfitLossStore();
 
   const setPeriod = (p: string) => {
     setSelectedPeriod(p);
@@ -77,20 +84,12 @@ export default function ProfitLoss() {
         setPeriodNum(90);
         break;
       case "직접입력":
-        // TODO: 직접입력 기능 구현 예정
         break;
       default:
         setPeriodNum(30);
     }
   };
 
-  const defaultData: ProfitLossData = {
-    cumulativeProfitLoss: 0,
-    cumulativeProfitLossRate: 0,
-    averageInvestment: 0,
-  };
-
-  // 기간이 변경될 때마다 시작일과 종료일 계산
   useEffect(() => {
     const now = new Date();
     const before = new Date(now.getTime() - periodNum * 24 * 60 * 60 * 1000);
@@ -98,7 +97,6 @@ export default function ProfitLoss() {
     setEndDate(now);
   }, [periodNum]);
 
-  // 데이터 fetch (portfolio, 현재가격 등)
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -135,11 +133,14 @@ export default function ProfitLoss() {
 
         const averageInvestment = periodNum === 0 ? 0 : totalInvestment / periodNum;
 
-        setData({
+        const newData = {
           cumulativeProfitLoss,
           cumulativeProfitLossRate,
           averageInvestment,
-        });
+        };
+
+        setData(newData);
+        setCumulativeProfitLossRate(cumulativeProfitLossRate); // ⭐ store에 저장
       } catch (e) {
         setError("데이터를 불러오는 중 오류가 발생했습니다.");
         console.error(e);
@@ -153,7 +154,6 @@ export default function ProfitLoss() {
 
   return (
     <div className="flex flex-col space-y-4">
-      {/* 기간 선택 및 날짜 표시 */}
       <div className="flex justify-start space-x-4">
         <div className="flex space-x-4">
           <span className="text-sm text-gray-500">기간</span>
@@ -183,10 +183,9 @@ export default function ProfitLoss() {
         </div>
       </div>
 
-      {/* 로딩, 에러, 데이터 컴포넌트 렌더링 */}
       {loading && <div>로딩중...</div>}
       {error && <div className="text-red-500">{error}</div>}
-      {!loading && !error && <ProfitLossNum data={data ?? defaultData} />}
+      {!loading && !error && <ProfitLossNum data={data ?? undefined} />}
     </div>
   );
 }

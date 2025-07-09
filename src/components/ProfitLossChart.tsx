@@ -12,6 +12,7 @@ export default function PortfolioChart() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const chartRef = useRef<Chart | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
     const fetchDataAndDrawChart = async () => {
@@ -23,11 +24,13 @@ export default function PortfolioChart() {
           return;
         }
 
+        const baseUrl = process.env.NEXT_PUBLIC_URL;
+
         const res = await axios.get<{
           code: number;
           message: string;
           data: PortfolioDto[];
-        }>("http://localhost:8080/api/v1/portfolio", {
+        }>(`${baseUrl}/api/v1/portfolio`, {
           withCredentials: true,
           headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -60,11 +63,11 @@ export default function PortfolioChart() {
 
         const backgroundColors = data.map((amount) =>
           amount >= 0
-            ? `rgba(54, 162, 235, ${0.3 + 0.7 * (amount / maxAbs)})` // blue
-            : `rgba(255, 99, 132, ${0.3 + 0.7 * (Math.abs(amount) / maxAbs)})` // red
+            ? `rgba(54, 162, 235, ${0.3 + 0.7 * (amount / maxAbs)})`
+            : `rgba(255, 99, 132, ${0.3 + 0.7 * (Math.abs(amount) / maxAbs)})`
         );
 
-        const canvas = document.getElementById("portfolioChart") as HTMLCanvasElement | null;
+        const canvas = canvasRef.current;
         if (!canvas) return;
         const ctx = canvas.getContext("2d");
         if (!ctx) return;
@@ -127,12 +130,13 @@ export default function PortfolioChart() {
     };
   }, []);
 
-  if (loading) return <div>📊 포트폴리오 데이터를 불러오는 중입니다...</div>;
-  if (error) return <div>{error}</div>;
-
   return (
-    <div style={{ width: "400px", height: "400px" }}>
-      <canvas id="portfolioChart" width="400" height="400" />
+    <div className="w-[400px] h-[400px] flex justify-center items-center">
+      {loading ? (
+        <div className="animate-spin rounded-full h-8 w-8 border-4 border-blue-500 border-t-transparent" />
+      ) : (
+        <canvas ref={canvasRef} width={400} height={400} />
+      )}
     </div>
   );
 }
