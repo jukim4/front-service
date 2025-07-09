@@ -1,6 +1,5 @@
 import { useAuthStore } from '@/store/authStore';
 import { tokenUtils } from './tokenUtils';
-import { json } from 'stream/consumers';
 
 const URL = process.env.NEXT_PUBLIC_URL || 'http://localhost';
 
@@ -205,7 +204,7 @@ class ApiClient {
     }
   }
 
-  // user 정보받기
+  // user holdings
   async userInfo() {
     const token = tokenUtils.returnTokens().accessToken;
     try {
@@ -245,6 +244,34 @@ class ApiClient {
       const data = await res.json();
       if(res.status === 200) {
         return data.data;
+      } else {
+        throw new Error(data.message || 'Request failed');
+      }
+    } catch(err) {
+      console.error('API Error', err);
+      throw err;
+    }
+  }
+
+  // 거래내역
+  async tradeHistory() {
+    const token = tokenUtils.returnTokens().accessToken;
+    try {
+      const res = await fetch(`${this.baseURL}/api/v1/histories/trades`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      const data = await res.json();
+      if (res.status === 200) {
+        if (data) {
+          return data;
+        } else {
+          return 0;
+        }
       } else {
         throw new Error(data.message || 'Request failed');
       }
