@@ -1,0 +1,123 @@
+name: Create and publish a Docker image to GitHub Container Registry for prod
+
+on:
+  push:
+    branches: ['prod']
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  build-and-push-image:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Set lowercase image name
+        id: image_name
+        run: |
+          LOWERCASE_OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          IMAGE_NAME="${LOWERCASE_OWNER}/cowing-msa-front"
+          echo "image_name=${IMAGE_NAME}" >> $GITHUB_OUTPUT
+
+      - name: Generate version tag
+        id: version
+        run: |
+          DATE_VERSION="$(date +'%Y.%m.%d')"
+          SHORT_SHA="$(echo $GITHUB_SHA | cut -c1-7)"
+          VERSION="${DATE_VERSION}-${SHORT_SHA}"
+          
+          echo "Generated version: $VERSION"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_PAT }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ steps.image_name.outputs.image_name }}:${{ steps.version.outputs.version }}
+            ${{ env.REGISTRY }}/${{ steps.image_name.outputs.image_name }}:latest 
+
+      # 디스코드 알람 전송
+      - name: Send Discord Notification
+        if: always()
+        shell: bash
+        run: |
+          STATUS="${{ job.status }}"
+          COLOR=$( [ "$STATUS" == "success" ] && echo "3066993" || echo "15158332" )
+          EMOJI=$( [ "$STATUS" == "success" ] && echo "🚀" || echo "❌" )
+          
+          # 에러 정보 수집
+          ERROR_SECTION=""
+          if [ "$STATUS" != "success" ]; then
+            ERROR_INFO="Build Status: $STATUS\n"
+            if [ "${{ steps.docker_login.outcome }}" != "success" ]; then
+              ERROR_INFO+="Docker Login Failed\n"
+              ERROR_INFO+="Registry: ${{ env.REGISTRY }}\n"
+              ERROR_INFO+="Username: ${{ github.actor }}\n"
+            fi
+            if [ "${{ steps.docker_build.outcome }}" != "success" ]; then
+              ERROR_INFO+="Docker Build/Push Failed\n"
+            fi
+            
+            ERROR_SECTION=', {
+              "name": "Error Details",
+              "value": "```\n'"${ERROR_INFO}"'\n```"
+            }'
+          fi
+          
+          # Discord 메시지 전송
+          curl -H "Content-Type: application/json" -X POST "${{ secrets.DISCORD_FRONT_WEBHOOK_URL }}" -d '{
+            "embeds": [{
+              "title": "'"$EMOJI"' 빌드 '"$STATUS"'",
+              "color": '"$COLOR"',
+              "fields": [
+                {
+                  "name": "Repository",
+                  "value": "${{ github.repository }}",
+                  "inline": true
+                },
+                {
+                  "name": "Branch",
+                  "value": "${{ github.ref_name }}",
+                  "inline": true
+                },
+                {
+                  "name": "Commit",
+                  "value": "${{ github.sha }}",
+                  "inline": true
+                },
+                {
+                  "name": "Author",
+                  "value": "${{ github.actor }}",
+                  "inline": true
+                },
+                {
+                  "name": "Image",
+                  "value": "${{ env.REGISTRY }}/${{ steps.image_name.outputs.image_name }}:${{ steps.version.outputs.version }}"
+                },
+                 {
+                  "name": "Action URL",
+                  "value": "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}",
+                  "inline": false
+                }
+                '"$ERROR_SECTION"'
+              ],
+              "timestamp": "'"$(date -u +"%Y-%m-%dT%H:%M:%SZ")"'"
+            }]
+          }'

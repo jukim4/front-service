@@ -7,9 +7,7 @@ import ProfitLossChart from "./ProfitLossChart";
 import ProfitLossWrapper from "./ProfitLossNum"; // 변경된 이름 사용
 
 import MarketSortBar from "@/components/MarketSortBar";
-import MarketTabs from "@/components/MarketTabs";
-import SearchBar from "@/components/SearchBar";
-import MarketList from "@/components/MarketList";
+import MarketListCompoenet from "./MarketListComponent";
 import { useRouter } from "next/navigation";
 
 export default function ProfitLossPage() {

@@ -13,7 +13,7 @@ export interface TradeData {
   timestamp: number;
 }
 
-const UPBIT_WS_URL = 'wss://api.upbit.com/websocket/v1';
+const UPBIT_WS_URL = process.env.UPBIT_WS_URL || 'wss://api.upbit.com/websocket/v1';
 
 // 마켓 정보를 가져오는 함수
 const fetchMarkets = async (): Promise<MarketInfo[]> => {

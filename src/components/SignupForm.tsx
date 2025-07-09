@@ -1,6 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+
+import { useAuthStore } from '@/store/authStore';
 
 type SignupFormProps = {
   onSwitch?: () => void;
@@ -9,28 +12,26 @@ type SignupFormProps = {
 export default function SignupForm({ onSwitch }: SignupFormProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
+  const [username, setUserName] = useState('');
+  const [nickname, setNickName] = useState('');
+  const { handleSingup } = useAuth(); // Assuming useAuth hook is available
+
+  const setUser = useAuthStore((state) => state.setUser);
+  
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const nickname = `${firstName} ${lastName}`;
-
     try {
-      const res = await fetch('http://localhost:8080/api/users', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, nickname, password }),
-      });
-
-      if (!res.ok) {
-        const error = await res.text();
-        throw new Error(error);
+      const result = await handleSingup(email, nickname, password, username);
+      if (result.success) {
+        // 임시 user 정보 저장
+        setUser({ email, nickname, username})
+        alert(result.message);
+      } else {
+        alert(result.message);
       }
-
-      alert('회원가입 완료!');
-      onSwitch && onSwitch(); // 로그인 페이지로 이동 요청
+      
     } catch (err: any) {
       alert('회원가입 실패: ' + err.message);
     }
@@ -43,16 +44,16 @@ export default function SignupForm({ onSwitch }: SignupFormProps) {
         <input
           type="text"
           placeholder="이름을 입력해주세요"
-          value={firstName}
-          onChange={(e) => setFirstName(e.target.value)}
+          value={username}
+          onChange={(e) => setUserName(e.target.value)}
           required
           className="p-2 border rounded flex-1 w-full"
         />
         <input
           type="text"
-          placeholder="성을 입력해주세요"
-          value={lastName}
-          onChange={(e) => setLastName(e.target.value)}
+          placeholder="닉네임을 입력해주세요"
+          value={nickname}
+          onChange={(e) => setNickName(e.target.value)}
           required
           className="p-2 border rounded flex-1 w-full"
         />

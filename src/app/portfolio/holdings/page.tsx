@@ -92,21 +92,7 @@ export default function Holdings() {
 
       {/* Right (검색 및 마켓 영역) */}
       <div className="relative col-span-1">
-        <div className="sticky top-4 flex h-[calc(100vh-2rem)] flex-col gap-2">
-          {/* 상단 고정 영역 */}
-          <div className="flex-shrink-0">
-            <SearchBar />
-            <div className="mt-2 rounded-t-md border-x border-t bg-white">
-              <MarketTabs />
-              <MarketSortBar />
-            </div>
-          </div>
-
-          {/* 스크롤 가능 영역 */}
-          <div className="flex-1 rounded-b-md border-x border-b bg-white overflow-y-auto">
-            <MarketList />
-          </div>
-        </div>
+        <MarketListCompoenet></MarketListCompoenet>
       </div>
     </main>
   );

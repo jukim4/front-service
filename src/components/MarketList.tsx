@@ -4,7 +4,11 @@ import { useMarketStore } from "@/store/marketStore"
 import { MarketInfo } from "@/types/market"
 import { useRouter, usePathname } from "next/navigation"
 
-export default function MarketList() {
+interface MarketListProps {
+  filterData: any; // Replace 'any' with a more specific type if possible
+}
+
+export default function MarketList({ filterData }: MarketListProps) {
   const { markets, tickers, error, isLoading, selectedMarket, setSelectedMarket } = useMarketStore();
   const router = useRouter();
   const pathname = usePathname();
@@ -77,7 +81,7 @@ export default function MarketList() {
   
   return (
     <div className="">
-      {markets.map((market) => (
+      {filterData.map((market: any) => (
         <div 
           key={market.market} 
           onClick={() => handleMarketSelect(market.market)}
