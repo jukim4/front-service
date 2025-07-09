@@ -1,10 +1,9 @@
 'use client'
-
-import { useAssetStore } from "@/store/assetStore";
+import { useAssetStore, useFetchPortfolio } from "@/store/assetStore";
 import { useMarketStore } from "@/store/marketStore";
 import { Card, CardContent } from "@/components/ui/card";
 
-export default function HoldingCointList() {
+export default function HoldingCoinList() {
   const { assets, getCurrentPrice } = useAssetStore();
   const { tickers } = useMarketStore();
 

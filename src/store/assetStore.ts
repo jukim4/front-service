@@ -1,89 +1,108 @@
 import { create } from 'zustand';
+import { useEffect } from 'react';
+import axios from 'axios';
 
+// Asset 타입
 interface Asset {
-    market_code: string;
-    market_name: string;
-    total_coin_price: number;
-    total_coin_cnt: number; // 매수 수량
+  marketCode: string;
+  marketName: string;
+  quantity: number;
+  averageCost: number;
+  totalCost: number;
 }
 
+// Zustand 스토어 정의
 interface AssetState {
   assets: Asset[];
   holdings: number;
 
+  setAssets: (assets: Asset[]) => void;
+
   getCurrentPrice: (market: string, tickers: Record<string, any>) => number;
   getTotalValuation: (assets: Asset[], tickers: Record<string, any>) => number[];
-  getDoughnutData: (assets: Asset[], tickers: Record<string, any>) => { label: string; data: number; }[];
+  getDoughnutData: (assets: Asset[], tickers: Record<string, any>) => { label: string; data: number }[];
 }
 
 export const useAssetStore = create<AssetState>((set, get) => ({
+  assets: [],
+  holdings: 0,
 
-    assets: [
-        {
-            market_code: 'KRW-BTC',
-            market_name: '비트코인',
-            total_coin_price: 409482,
-            total_coin_cnt: 0.123,
-        },
-        {
-            market_code: 'KRW-ETH',
-            market_name: '이더리움',
-            total_coin_price: 409482000,
-            total_coin_cnt: 10,
-        },
-        {
-            market_code: 'KRW-USDT',
-            market_name: '테더',
-            total_coin_price: 40948200000,
-            total_coin_cnt: 0.123,
-        },
-        
-    ],
-    holdings: 0,
+  setAssets: (assets: Asset[]) => set({ assets }),
 
-    // 현재가 가져오기
-    getCurrentPrice: (market: string, tickers: Record<string, any>) => {
-        const price = tickers[market]?.trade_price;
+  getCurrentPrice: (market: string, tickers: Record<string, any>) => {
+    return tickers[market]?.trade_price || 0;
+  },
 
-        if (price) {
-            return price;
+  getTotalValuation: (assets: Asset[], tickers: Record<string, any>) => {
+    const { getCurrentPrice, holdings } = get();
+
+    const total_price = assets.reduce((sum, asset) => sum + asset.totalCost, 0);
+    const total_valuations = assets.reduce(
+      (sum, asset) => sum + getCurrentPrice(asset.marketCode, tickers) * asset.quantity,
+      0
+    );
+
+    const total_holding = total_valuations + holdings;
+    const pl = total_valuations - total_price;
+    const total_rateReturn = total_price === 0 ? 0 : (pl / total_price) * 100;
+
+    return [total_price, total_valuations, total_holding, pl, total_rateReturn];
+  },
+
+  getDoughnutData: (assets: Asset[], tickers: Record<string, any>) => {
+    const { getCurrentPrice, getTotalValuation } = get();
+    const [, totalValuation] = getTotalValuation(assets, tickers);
+
+    if (totalValuation === 0) return [];
+
+    return assets.map((asset) => {
+      const current = getCurrentPrice(asset.marketCode, tickers);
+      const value = current * asset.quantity;
+      return {
+        label: asset.marketCode, 
+        data: Math.round((value / totalValuation) * 10000) / 100,
+      };
+    });
+  },
+}));
+
+// 포트폴리오 fetch 훅
+export const useFetchPortfolio = () => {
+  const setAssets = useAssetStore((state) => state.setAssets);
+
+  useEffect(() => {
+    const fetchPortfolio = async () => {
+      try {
+        const accessToken = localStorage.getItem('accessToken');
+        if (!accessToken) {
+          console.error('Access token이 없습니다.');
+          return;
         }
-        return 0;
-    },
 
-    getTotalValuation: (assets: Asset[], tickers: Record<string, any>) => {
-        const {getCurrentPrice, holdings} = get();
+        const res = await axios.get('/api/v1/portfolio', {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+          withCredentials: true,
+        });
 
-        // 총 매수 코인 가격
-        const total_price = assets.reduce((sum, asset) => sum + asset.total_coin_price, 0);
+        const data = res.data?.data ?? [];
 
-        // 현재가 x 보유 코인 개수
-        let valuations = assets.map((asset) => getCurrentPrice(asset.market_code, tickers) * asset.total_coin_cnt);
-        let total_valuations = valuations.reduce((sum, price) => sum + price, 0); // 총평가
+        const formattedAssets: Asset[] = data.map((item: any) => ({
+          marketCode: item.marketCode,
+          marketName: item.marketCode,
+          quantity: parseFloat(item.quantity ?? 0),
+          averageCost: item.averageCost ?? 0,
+          totalCost: item.totalCost ?? 0,
+        }));
 
-        let total_holding = total_valuations + holdings; // 총 보유자산
-        let pl = total_valuations - total_price; // 평가손익
-        let total_rateReturn = pl/total_price * 100; // 총 수익률
+        setAssets(formattedAssets);
+      } catch (error) {
+        console.error('Failed to fetch portfolio:', error);
+      }
+    };
 
-        
-
-        let result = [total_price, total_valuations, total_holding, pl, total_rateReturn];
-
-        return result;   
-    },
-
-    getDoughnutData: (assets: Asset[], tickers: Record<string, any>) => {
-        const { getCurrentPrice, getTotalValuation } = get();
-        const result = getTotalValuation(assets, tickers);
-        
-        const data = assets.map((asset) => {
-            // asset.market_code로 현재가를 가져와서 계산
-            const current = getCurrentPrice(asset.market_code, tickers);
-            return {
-                label: asset.market_name,
-                data: Number((current * asset.total_coin_cnt) / result[1]) * 100,
-            }
-        })
-        return data;
-    },
-}))
+    fetchPortfolio();
+  }, []);
+};

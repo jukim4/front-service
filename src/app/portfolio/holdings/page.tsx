@@ -6,8 +6,11 @@ import TotalBuyCoin from '@/components/TotalBuyCoin';
 import { useAssetStore } from '@/store/assetStore';
 import { useMarketStore } from '@/store/marketStore';
 import PortfolioCoin from '@/components/PortfolioCoin';
-import HoldingCointList from '@/components/HoldingCoinList';
-import MarketListCompoenet from '@/components/MarketListComponent';
+import HoldingCoinList from '@/components/HoldingCoinList';
+import SearchBar from '@/components/SearchBar';
+import MarketTabs from '@/components/MarketTabs';
+import MarketSortBar from '@/components/MarketSortBar';
+import MarketList from '@/components/MarketList';
 
 export default function Holdings() {
   const router = useRouter();
@@ -82,7 +85,7 @@ export default function Holdings() {
               </div>
             </div>
 
-            <HoldingCointList />
+            <HoldingCoinList />
           </div>
         )}
       </div>
