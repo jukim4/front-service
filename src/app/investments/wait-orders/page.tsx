@@ -1,73 +1,45 @@
 "use client"
 
-import { useState, useEffect } from "react";
+import { format } from "date-fns";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent } from "@/components/ui/card";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import MarketListComponent from "@/components/MarketListComponent";
+import { useMarketStore } from "@/store/marketStore";
+import { apiClient } from "@/lib/apiClient";
 
-
-type Order = {
+type PendingOrder = {
   id: string;
-  orderPosition: "BUY" | "SELL";
-  status: string;
   marketCode: string;
-  watchPrice?: number;
+  orderType: string;
+  orderPosition: string;
   orderPrice: number;
   totalQuantity: number;
-  pendingQuantity?: number;
-  orderRequestedAt: string;
+  orderRequestedAt: number;
 };
 
 export default function WaitOrders() {
   const router = useRouter();
   const [orderType, setOrderType] = useState("전체주문");
   const [activeTab, setActiveTab] = useState("미체결");
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [orders, setOrders] = useState<PendingOrder[]>([]);
   const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set()); // 선택된 주문 ID를 추적하는 Set
 
-  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-
-  // 더미 데이터 추가
   const fetchPendingOrders = async () => {
-    const dummyData = [
-      {
-        id: "1",
-        orderPosition: "BUY",
-        status: "PENDING",
-        marketCode: "BTC/USD",
-        watchPrice: 50000,
-        orderPrice: 49000,
-        totalQuantity: 1.5,//거래 수량
-        pendingQuantity: 1.0, 
-        orderRequestedAt: "2025-07-09T10:00:00",
-      },
-      {
-        id: "2",
-        orderPosition: "SELL",
-        status: "PENDING",
-        marketCode: "ETH/USD",
-        watchPrice: 3000,
-        orderPrice: 2900,
-        totalQuantity: 2,
-        pendingQuantity: 2,
-        orderRequestedAt: "2025-07-09T11:00:00",
-      },
-      {
-        id: "3",
-        orderPosition: "BUY",
-        status: "PENDING",
-        marketCode: "SOL/USD",
-        watchPrice: 100,
-        orderPrice: 95,
-        totalQuantity: 10,
-        pendingQuantity: 5,
-        orderRequestedAt: "2025-07-09T12:00:00",
-      },
-    ];
-    setOrders(dummyData as Order[]); // 더미 데이터 상태에 설정
+    try {
+      const result = await apiClient.pendingOrders();
+      if (result !== 0) {
+        setOrders(result);
+      } else {
+        console.error("No pending orders found.");
+      }
+    } catch (error) {
+      console.error("Error fetching pending orders:", error);
+    }
   };
+  
 
   useEffect(() => {
     fetchPendingOrders();
@@ -105,10 +77,14 @@ export default function WaitOrders() {
 
   // 일괄 취소 버튼 클릭 시
   const handleCancelSelectedOrders = () => {
-    // 선택된 주문들 처리 (예: 상태 변경, API 호출 등)
     console.log("취소할 주문들: ", Array.from(selectedOrders));
 
-    // 선택된 주문들을 취소 처리 후, 선택된 주문 리스트 초기화
+    // Remove the canceled orders from the 'orders' state
+    setOrders((prevOrders) =>
+      prevOrders.filter((order) => !selectedOrders.has(order.id))
+    );
+
+    // Reset the selected orders set
     setSelectedOrders(new Set());
   };
 
@@ -124,8 +100,8 @@ export default function WaitOrders() {
                   key={tab}
                   onClick={() => handleTabChange(tab)}
                   className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === tab
-                      ? "text-blue-600 border-blue-600"
-                      : "text-gray-500 border-transparent hover:text-gray-700"
+                    ? "text-blue-600 border-blue-600"
+                    : "text-gray-500 border-transparent hover:text-gray-700"
                     }`}
                 >
                   {tab}
@@ -182,28 +158,30 @@ export default function WaitOrders() {
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">미체결량</th>
                       </tr>
                     </thead>
-                    <tbody>
+                    <tbody className="divide-y divide-gray-200">
                       {filteredOrders.length === 0 ? (
                         <tr>
-                          <td colSpan={8} className="px-4 py-16 text-center text-gray-500">미체결 주문이 없습니다.</td>
+                          <td colSpan={10} className="px-4 py-16 text-center text-gray-500">
+                            거래내역이 없습니다.
+                          </td>
                         </tr>
                       ) : (
-                        filteredOrders.map((order) => (
-                          <tr key={order.id}>
+                        filteredOrders.map((pendingorder) => (
+                          <tr key={pendingorder.id}>
                             <td className="px-4 py-2">
                               <input
                                 type="checkbox"
-                                checked={selectedOrders.has(order.id)}
-                                onChange={() => handleSelectOrder(order.id)}
+                                checked={selectedOrders.has(pendingorder.id)}
+                                onChange={() => handleSelectOrder(pendingorder.id)}
                               />
                             </td>
-                            <td className="px-4 py-2">{new Date(order.orderRequestedAt).toLocaleString()}</td>
-                            <td className="px-4 py-2 text-gray-500">{order.status}</td>
-                            <td className="px-4 py-2">{order.marketCode}</td>
-                            <td className="px-4 py-2">{order.watchPrice}</td>
-                            <td className="px-4 py-2">{order.orderPrice}</td>
-                            <td className="px-4 py-2">{order.totalQuantity}</td>
-                            <td className="px-4 py-2">{order.pendingQuantity}</td>
+                            <td className="px-4 py-2 text-gray-500">{format(pendingorder.orderRequestedAt, "yyyy-MM-dd HH:mm:ss")}</td>
+                            <td className="px-4 py-2">{pendingorder.orderPosition}</td>
+                            <td className="px-4 py-2">{pendingorder.marketCode}</td>
+                            <td className="px-4 py-2">{pendingorder.orderPrice}</td>
+                            <td className="px-4 py-2">{pendingorder.orderPrice}</td>
+                            <td className="px-4 py-2">{pendingorder.totalQuantity}</td>
+                            <td className="px-4 py-2">{pendingorder.totalQuantity}</td>
                           </tr>
                         ))
                       )}
@@ -221,5 +199,5 @@ export default function WaitOrders() {
         <MarketListComponent />
       </div>
     </main>
-  )
+  );
 }
