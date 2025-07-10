@@ -76,6 +76,7 @@ export default function TradeForm() {
     }
 
     setInputMode('count');
+    getPortfolio();
   }, [totalPrice, price, inputMode])
 
   useEffect(() => {
@@ -104,7 +105,7 @@ export default function TradeForm() {
   }
 
   const fetchAsset = async () => {
-    const asset = await apiClient.userInfo();
+    const asset = await apiClient.userHoldings();
     setHoldingsCoin(new Intl.NumberFormat('ko-KR').format(Number(asset.asset)));
   };
 
