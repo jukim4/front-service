@@ -1,45 +1,41 @@
 import { create } from 'zustand';
+import { apiClient } from '@/lib/apiClient';
 
-interface Asset {
-    market_code: string;
-    market_name: string;
-    total_coin_price: number;
-    total_coin_cnt: number; // 매수 수량
+type PortfolioItem = {
+  name: string;
+  quantity: number;
+  average_cost: number;
+  total_cost: number;
 }
 
 interface AssetState {
-  assets: Asset[];
+  assets: PortfolioItem[];
   holdings: number;
 
+  fetchPortfolio: () => void;
   getCurrentPrice: (market: string, tickers: Record<string, any>) => number;
-  getTotalValuation: (assets: Asset[], tickers: Record<string, any>) => number[];
-  getDoughnutData: (assets: Asset[], tickers: Record<string, any>) => { label: string; data: number; }[];
+  getTotalValuation: (assets: PortfolioItem[], tickers: Record<string, any>) => number[];
+  getDoughnutData: (assets: PortfolioItem[], tickers: Record<string, any>) => { label: string; data: number; }[];
+}
+
+const  getUserPortfolio = async () => {
+    const portfolio: PortfolioItem[] = await apiClient.userPorfolio();
+    const holdings = await apiClient.userHoldings();
+    const holding = holdings.asset;
+
+    return {portfolio: portfolio, holdings: holding};
 }
 
 export const useAssetStore = create<AssetState>((set, get) => ({
 
-    assets: [
-        {
-            market_code: 'KRW-BTC',
-            market_name: '비트코인',
-            total_coin_price: 409482,
-            total_coin_cnt: 0.123,
-        },
-        {
-            market_code: 'KRW-ETH',
-            market_name: '이더리움',
-            total_coin_price: 409482000,
-            total_coin_cnt: 10,
-        },
-        {
-            market_code: 'KRW-USDT',
-            market_name: '테더',
-            total_coin_price: 40948200000,
-            total_coin_cnt: 0.123,
-        },
-        
-    ],
+    assets: [],
     holdings: 0,
+
+    // user 포트폴리오 저장
+    fetchPortfolio: async () => {
+        const {portfolio, holdings} = await getUserPortfolio();
+        set({assets: portfolio, holdings: holdings})
+    },
 
     // 현재가 가져오기
     getCurrentPrice: (market: string, tickers: Record<string, any>) => {
@@ -51,17 +47,19 @@ export const useAssetStore = create<AssetState>((set, get) => ({
         return 0;
     },
 
-    getTotalValuation: (assets: Asset[], tickers: Record<string, any>) => {
+    getTotalValuation: (assets: PortfolioItem[], tickers: Record<string, any>) => {
         const {getCurrentPrice, holdings} = get();
 
         // 총 매수 코인 가격
-        const total_price = assets.reduce((sum, asset) => sum + asset.total_coin_price, 0);
+        const total_price = assets.reduce((sum, asset) => sum + asset.total_cost, 0);
 
         // 현재가 x 보유 코인 개수
-        let valuations = assets.map((asset) => getCurrentPrice(asset.market_code, tickers) * asset.total_coin_cnt);
+        let valuations = assets.map((asset) => getCurrentPrice(asset.name, tickers) * asset.quantity);
         let total_valuations = valuations.reduce((sum, price) => sum + price, 0); // 총평가
+        
 
         let total_holding = total_valuations + holdings; // 총 보유자산
+        
         let pl = total_valuations - total_price; // 평가손익
         let total_rateReturn = pl/total_price * 100; // 총 수익률
 
@@ -72,16 +70,16 @@ export const useAssetStore = create<AssetState>((set, get) => ({
         return result;   
     },
 
-    getDoughnutData: (assets: Asset[], tickers: Record<string, any>) => {
+    getDoughnutData: (assets: PortfolioItem[], tickers: Record<string, any>) => {
         const { getCurrentPrice, getTotalValuation } = get();
         const result = getTotalValuation(assets, tickers);
         
         const data = assets.map((asset) => {
             // asset.market_code로 현재가를 가져와서 계산
-            const current = getCurrentPrice(asset.market_code, tickers);
+            const current = getCurrentPrice(asset.name, tickers);
             return {
-                label: asset.market_name,
-                data: Number((current * asset.total_coin_cnt) / result[1]) * 100,
+                label: asset.name,
+                data: Number((current * asset.total_cost) / result[1]) * 100,
             }
         })
         return data;
