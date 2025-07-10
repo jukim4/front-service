@@ -1,14 +1,14 @@
 import { create } from 'zustand';
 import { useEffect } from 'react';
 import axios from 'axios';
-
+import { apiClient } from '@/lib/apiClient';
+import {useMarketStore} from '@/store/marketStore';
 interface Asset {
   marketCode: string;
-  marketName: string;
   quantity: number;
   averageCost: number;
   totalCost: number;
-  date: string;
+  date: string; //날짜 값이 없어서 누적 수익률 그래프 안뜸
 }
 
 interface AssetState {
@@ -73,7 +73,7 @@ export const useAssetStore = create<AssetState>((set, get) => ({
     if (total === 0) return [];
 
     return assets.map((asset) => ({
-      label: asset.marketName,
+      label: asset.marketCode,
       data: parseFloat(((asset.totalCost / total) * 100).toFixed(2)),
     }));
   },
@@ -140,43 +140,21 @@ export const useAssetStore = create<AssetState>((set, get) => ({
   },
 }));
 
-// 포트폴리오 fetch 훅 - 더미 데이터로 테스트
+// 포트폴리오 fetch 훅
 export const useFetchPortfolio = () => {
   const setAssets = useAssetStore((state) => state.setAssets);
 
   useEffect(() => {
-    const fetchDummyAssets = async () => {
-      // 백엔드 연결 전 더미 데이터
-      const dummyAssets = [
-        {
-          marketCode: 'KRW-BTC',
-          marketName: 'Bitcoin',
-          quantity: 0.1,
-          averageCost: 40000000,
-          totalCost: 4000000,
-          date: '2025-07-01',
-        },
-        {
-          marketCode: 'KRW-ETH',
-          marketName: 'Ethereum',
-          quantity: 0.5,
-          averageCost: 2500000,
-          totalCost: 1250000,
-          date: '2025-07-02',
-        },
-        {
-          marketCode: 'KRW-XRP',
-          marketName: 'Ripple',
-          quantity: 1000,
-          averageCost: 600,
-          totalCost: 600000,
-          date: '2025-07-03',
-        },
-      ];
-
-      setAssets(dummyAssets);
+    const fetchPortfolio = async () => {
+      try {
+        const assets = await apiClient.userPorfolio();
+        console.log("Fetched assets:", assets); 
+        setAssets(assets);
+      } catch (err) {
+        console.error('Failed to fetch portfolio:', err);
+      }
     };
 
-    fetchDummyAssets();
+    fetchPortfolio();
   }, []);
 };
