@@ -10,8 +10,11 @@ import { useMarketStore } from "@/store/marketStore";
 type TimeUnit = 'millisecond' | 'second' | 'minute' | 'hour' | 'day' | 'week' | 'month' | 'quarter' | 'year';
 
 // 동적 import로 ChartComponent 불러오기
-const ChartComponent = dynamic(() => import("@/lib/chartUtils").then(mod => mod.default), {
+const ChartComponent = dynamic(() => import("@/lib/chartUtils"), {
   ssr: false,
+  loading: () => <div className="flex items-center justify-center h-96">
+    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+  </div>
 });
 
 export const CandleChart = () => {
