@@ -82,17 +82,17 @@ export default function TransactionHistoryPage() {
     }
   };
 
-  const toDateOnlly = (date: Date) => {
+  const toDateOnly = (date: Date) => {
     return new Date(date.getFullYear(), date.getMonth(), date.getDate());
   }
 
   const getTradeHistory = async () => {
     const result = await apiClient.tradeHistory();
-    const end = toDateOnlly(default_eTime);
-    const start = toDateOnlly(default_sTime);
+    const end = toDateOnly(default_eTime);
+    const start = toDateOnly(default_sTime);
 
     const period_items = result.filter((item: TradeHistory) => {
-      const time = toDateOnlly(new Date(item.concludedAt));
+      const time = toDateOnly(new Date(item.concludedAt));
 
       if (transactionType === '전체') {
         return end <= time && time <= start;
@@ -303,8 +303,8 @@ export default function TransactionHistoryPage() {
                             <td className="text-center text-gray-500 text-xs py-3">{history.tradeQuantity}</td>
                             <td className="text-center text-gray-500 text-xs py-3">{(history.tradePrice / history.tradeQuantity).toFixed(2)}</td>
                             <td className="text-center text-gray-500 text-xs py-3">{history.tradePrice}</td>
-                            <td className="text-center text-gray-500 text-xs py-3">{(history.tradePrice * 0.05).toFixed(2)}</td>
-                            <td className="text-center text-gray-500 text-xs py-3">{(history.tradePrice + (history.tradePrice * 0.05)).toFixed(2)}</td>
+                            <td className="text-center text-gray-500 text-xs py-3">{(history.tradePrice * 0.0005).toFixed(2)}</td>
+                            <td className="text-center text-gray-500 text-xs py-3">{(history.tradePrice + (history.tradePrice * 0.0005)).toFixed(2)}</td>
                             {/* 주문시간은 api에 없어서 체결시간으로 대체 */}
                             <td className="text-center text-gray-500 text-xs py-3">{format(new Date(history.concludedAt), 'yyyy.MM.dd hh:mm')}</td>
                           </tr>
