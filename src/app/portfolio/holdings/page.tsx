@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { useRouter } from "next/navigation";
 import TotalBuyCoin from '@/components/TotalBuyCoin';
 import { useAssetStore } from '@/store/assetStore';
@@ -13,7 +13,7 @@ export default function Holdings() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("보유자산");
 
-  const { assets, getDoughnutData } = useAssetStore();
+  const { assets, getDoughnutData, fetchPortfolio } = useAssetStore();
   const { tickers } = useMarketStore();
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -28,6 +28,9 @@ export default function Holdings() {
     }
   };
 
+  useEffect(() => {
+    fetchPortfolio();
+  }, []);
 
   return (
     <main className="grid grid-cols-3 gap-2 min-h-screen p-4 md:p-8 bg-gray-50">
