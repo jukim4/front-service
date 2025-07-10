@@ -34,7 +34,6 @@ export default function HoldingsCoin() {
             {/* 차트 데이터 */}
             <div className="w-full md:w-1/3 aspect-square">
               <PortfolioCoin
-                uid={1}
                 datas={getDoughnutData(assets, tickers)}
                 canvasRef={canvasRef}
               />

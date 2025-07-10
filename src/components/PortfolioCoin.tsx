@@ -11,7 +11,6 @@ interface Data {
 }
 
 interface PortfolioCoinProps {
-  uid: number;
   datas: Data[];
   canvasRef: React.RefObject<HTMLCanvasElement>;
 }

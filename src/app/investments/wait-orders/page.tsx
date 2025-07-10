@@ -66,7 +66,7 @@ export default function WaitOrders() {
         orderRequestedAt: "2025-07-09T12:00:00",
       },
     ];
-    setOrders(dummyData); // 더미 데이터 상태에 설정
+    setOrders(dummyData as Order[]); // 더미 데이터 상태에 설정
   };
 
   useEffect(() => {
