@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, RefObject } from "react";
 import Chart from "chart.js/auto";
 import ChartDataLabels from "chartjs-plugin-datalabels";
+import PriceListPage from "@/app/chart/page";
 
 interface Data {
     label: string;
@@ -34,6 +35,8 @@ export default function PortfolioCoin({uid, datas, canvasRef}: PortfolioCoinProp
         const chartData = etc > 0 ? [...mainCoins, { label: "기타", data: etc }] : mainCoins;
         const coinName = chartData.map((d) => d.label);
         const coinData = chartData.map((d) => d.data);
+        const total = coinData.reduce((sum, price) => sum + price, 0);
+        const percentV = coinData.map(i => (i / total) * 100);
 
         const fontSize = Math.max(Math.round(window.innerWidth / 130), 8);
 
@@ -43,7 +46,7 @@ export default function PortfolioCoin({uid, datas, canvasRef}: PortfolioCoinProp
                 data: {
                     labels: coinName,
                     datasets: [{
-                        data: coinData,
+                        data: percentV,
                         backgroundColor: [
                             "#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0", "#9966FF",
                             "#FF9F40", "#C9CBCF", "#F67019", "#F53794", "#537BC4",
