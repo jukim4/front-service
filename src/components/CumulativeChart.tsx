@@ -88,12 +88,13 @@ export default function CumulativeChart() {
   }, [tickers]);
 
   return (
+    <div>날짜 데이터가 포트폴리오에 없어서 누적손익그래프 안뜹니다.. 이건 어떻게 받아와야 하는지 잘 모르겠습니다..
     <div className="w-[400px] h-[400px] flex justify-center items-center">
       {loading ? (
         <div className="animate-spin rounded-full h-8 w-8 border-4 border-blue-500 border-t-transparent" />
       ) : (
         <canvas ref={canvasRef} width={400} height={400} />
       )}
-    </div>
+    </div></div>
   );
 }

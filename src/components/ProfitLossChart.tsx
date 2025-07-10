@@ -1,26 +1,14 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import Chart from "chart.js/auto";
-import { useAssetStore, useFetchPortfolio } from '@/store/assetStore';
+import { useAssetStore, useFetchPortfolio } from "@/store/assetStore";
 
-export default function ProfitLossChart() {
-  const [loading, setLoading] = useState(true);
+export default function PortfolioChart() {
+  useFetchPortfolio(); // 데이터 불러오기 훅 실행
   const chartRef = useRef<Chart | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const assets = useAssetStore((state) => state.assets);
+  const { assets } = useAssetStore();
 
   useEffect(() => {
-    if (!assets || assets.length === 0) return;
-
-    const labels = assets.map((asset) => asset.marketName);
-    const data = assets.map((asset) => asset.totalCost);
-    const maxAbs = Math.max(...data.map((v) => Math.abs(v))) || 1;
-
-    const backgroundColors = data.map((amount) =>
-      amount >= 0
-        ? `rgba(54, 162, 235, ${0.3 + 0.7 * (amount / maxAbs)})`
-        : `rgba(255, 99, 132, ${0.3 + 0.7 * (Math.abs(amount) / maxAbs)})`
-    );
-
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
@@ -28,6 +16,26 @@ export default function ProfitLossChart() {
 
     if (chartRef.current) {
       chartRef.current.destroy();
+    }
+
+    let labels: string[] = [];
+    let data: number[] = [];
+    let backgroundColors: string[] = [];
+    const maxAbs = Math.max(...assets.map((v) => Math.abs(v.totalCost))) || 1;
+
+    if (assets.length > 0) {
+      labels = assets.map((asset) => asset.marketCode);
+      data = assets.map((asset) => asset.totalCost);
+      backgroundColors = data.map((amount) =>
+        amount >= 0
+          ? `rgba(54, 162, 235, ${0.3 + 0.7 * (amount / maxAbs)})`
+          : `rgba(255, 99, 132, ${0.3 + 0.7 * (Math.abs(amount) / maxAbs)})`
+      );
+    } else {
+      // 기본 빈 차트 구성
+      labels = ["자산 없음"];
+      data = [0];
+      backgroundColors = ["rgba(200, 200, 200, 0.5)"];
     }
 
     chartRef.current = new Chart(ctx, {
@@ -39,9 +47,7 @@ export default function ProfitLossChart() {
             label: "총 투자금액 (원)",
             data,
             backgroundColor: backgroundColors,
-            borderColor: data.map((amount) =>
-              amount >= 0 ? "rgba(54, 162, 235, 1)" : "rgba(255, 99, 132, 1)"
-            ),
+            borderColor: backgroundColors.map((c) => c.replace(/0\.\d+/, "1")),
             borderWidth: 1,
           },
         ],
@@ -52,7 +58,7 @@ export default function ProfitLossChart() {
           legend: { display: false },
           title: {
             display: true,
-            text: "자산별 총 투자금액",
+            text: "보유 자산별 투자금액",
           },
         },
         scales: {
@@ -66,20 +72,14 @@ export default function ProfitLossChart() {
       },
     });
 
-    setLoading(false);
-
     return () => {
       if (chartRef.current) chartRef.current.destroy();
     };
   }, [assets]);
 
   return (
-    <div className="w-[400px] h-[400px] flex justify-center items-center">
-      {loading ? (
-        <div className="animate-spin rounded-full h-8 w-8 border-4 border-blue-500 border-t-transparent" />
-      ) : (
-        <canvas ref={canvasRef} width={400} height={400} />
-      )}
+    <div className="w-[400px] h-[400px] flex justify-center items-center rounded bg-white">
+      <canvas ref={canvasRef} width={400} height={400} />
     </div>
   );
 }

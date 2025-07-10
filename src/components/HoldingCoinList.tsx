@@ -45,7 +45,7 @@ export default function HoldingCointList() {
 
                   return (
                     <tr key={asset.marketCode} className="border-b hover:bg-gray-50">
-                      <td className="px-3 py-1 text-gray-800 whitespace-nowrap">{asset.marketName}</td>
+                      <td className="px-3 py-1 text-gray-800 whitespace-nowrap">{asset.marketCode}</td>{ /* 마켓네임 없어서 마켓코드로 대체 */ }
                       <td className="px-3 py-1 text-gray-800 whitespace-nowrap">{asset.marketCode}</td>
                       <td className="px-3 py-1 text-right text-gray-800 whitespace-nowrap">{asset.quantity.toLocaleString()}</td>
                       <td className="px-3 py-1 text-right text-gray-800 whitespace-nowrap">{avgPrice.toLocaleString()} KRW</td>
