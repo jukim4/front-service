@@ -2,16 +2,15 @@ import { create } from 'zustand';
 import { useEffect } from 'react';
 import axios from 'axios';
 
-// Asset 타입 정의
 interface Asset {
   marketCode: string;
   marketName: string;
   quantity: number;
   averageCost: number;
   totalCost: number;
+  date: string;
 }
 
-// Zustand 스토어 타입 정의
 interface AssetState {
   assets: Asset[];
   holdings: number;
@@ -24,9 +23,23 @@ interface AssetState {
     assets: Asset[],
     tickers: Record<string, any>
   ) => { label: string; data: number }[];
+  getValuationSummary: (
+    assets: Asset[],
+    tickers: Record<string, any>
+  ) => {
+    totalInvestment: number;
+    totalValuation: number;
+    cumulativeProfitLoss: number;
+    cumulativeProfitLossRate: number;
+    averageInvestment: number;
+  };
+
+  getCumulativeProfitLossByDate: (
+    assets: Asset[],
+    tickers: Record<string, any>
+  ) => { date: string; cumulativeProfitLossRate: number }[];
 }
 
-// Zustand 스토어 구현
 export const useAssetStore = create<AssetState>((set, get) => ({
   assets: [],
   holdings: 0,
@@ -61,41 +74,109 @@ export const useAssetStore = create<AssetState>((set, get) => ({
 
     return assets.map((asset) => ({
       label: asset.marketName,
-      data: parseFloat(((asset.totalCost / total) * 100).toFixed(2)), // 비중(%)
+      data: parseFloat(((asset.totalCost / total) * 100).toFixed(2)),
     }));
+  },
+
+  getValuationSummary: (assets: Asset[], tickers: Record<string, any>) => {
+    const { getCurrentPrice } = get();
+
+    const totalInvestment = assets.reduce((sum, asset) => sum + asset.totalCost, 0);
+    const totalValuation = assets.reduce(
+      (sum, asset) => sum + getCurrentPrice(asset.marketCode, tickers) * asset.quantity,
+      0
+    );
+
+    const cumulativeProfitLoss = totalValuation - totalInvestment;
+    const cumulativeProfitLossRate = totalInvestment === 0 ? 0 : (cumulativeProfitLoss / totalInvestment) * 100;
+    const averageInvestment = assets.length === 0 ? 0 : totalInvestment / assets.length;
+
+    return {
+      totalInvestment,
+      totalValuation,
+      cumulativeProfitLoss,
+      cumulativeProfitLossRate,
+      averageInvestment,
+    };
+  },
+
+  // 날짜별 누적 수익률 배열 반환 함수 (예시: 날짜 순서대로 계산)
+  getCumulativeProfitLossByDate: (assets: Asset[], tickers: Record<string, any>) => {
+    if (!assets.length) return [];
+
+    // 날짜 기준으로 오름차순 정렬
+    const sortedAssets = [...assets].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    // 날짜별 누적 계산 저장
+    const dateMap: Record<string, Asset[]> = {};
+
+    sortedAssets.forEach((asset) => {
+      if (!dateMap[asset.date]) dateMap[asset.date] = [];
+      dateMap[asset.date].push(asset);
+    });
+
+    const results: { date: string; cumulativeProfitLossRate: number }[] = [];
+
+    // 누적자산과 누적투자금 계산용 변수
+    let cumulativeAssets: Asset[] = [];
+
+    // 날짜 오름차순 순회하면서 누적값 계산
+    Object.keys(dateMap)
+      .sort((a, b) => new Date(a).getTime() - new Date(b).getTime())
+      .forEach((date) => {
+        // 현재 날짜 자산을 누적 리스트에 추가
+        cumulativeAssets = cumulativeAssets.concat(dateMap[date]);
+
+        // 현재 누적 자산에 대해 계산
+        const { totalInvestment, cumulativeProfitLossRate } = get().getValuationSummary(
+          cumulativeAssets,
+          tickers
+        );
+
+        results.push({ date, cumulativeProfitLossRate });
+      });
+
+    return results;
   },
 }));
 
-// 포트폴리오 fetch 훅
+// 포트폴리오 fetch 훅 - 더미 데이터로 테스트
 export const useFetchPortfolio = () => {
   const setAssets = useAssetStore((state) => state.setAssets);
 
   useEffect(() => {
-    // 실제 API 호출 대신 더미 데이터 사용
-    const dummyAssets = [
-      {
-        marketCode: 'BTC',
-        marketName: 'Bitcoin',
-        quantity: 1.5,
-        averageCost: 30000,
-        totalCost: 45000,
-      },
-      {
-        marketCode: 'ETH',
-        marketName: 'Ethereum',
-        quantity: 10,
-        averageCost: 2000,
-        totalCost: 20000,
-      },
-      {
-        marketCode: 'XRP',
-        marketName: 'Ripple',
-        quantity: 500,
-        averageCost: 0.5,
-        totalCost: 250,
-      },
-    ];
+    const fetchDummyAssets = async () => {
+      // 백엔드 연결 전 더미 데이터
+      const dummyAssets = [
+        {
+          marketCode: 'KRW-BTC',
+          marketName: 'Bitcoin',
+          quantity: 0.1,
+          averageCost: 40000000,
+          totalCost: 4000000,
+          date: '2025-07-01',
+        },
+        {
+          marketCode: 'KRW-ETH',
+          marketName: 'Ethereum',
+          quantity: 0.5,
+          averageCost: 2500000,
+          totalCost: 1250000,
+          date: '2025-07-02',
+        },
+        {
+          marketCode: 'KRW-XRP',
+          marketName: 'Ripple',
+          quantity: 1000,
+          averageCost: 600,
+          totalCost: 600000,
+          date: '2025-07-03',
+        },
+      ];
 
-    setAssets(dummyAssets);
+      setAssets(dummyAssets);
+    };
+
+    fetchDummyAssets();
   }, []);
 };
