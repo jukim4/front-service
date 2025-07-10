@@ -280,6 +280,34 @@ class ApiClient {
       throw err;
     }
   }
+
+  // 미체결 주문
+  async pendingOrders() {
+    const token = tokenUtils.returnTokens().accessToken;
+    try {
+      const res = await fetch(`${this.baseURL}/api/v1/histories/orders/pending`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      const data = await res.json();
+      if (res.status === 200) {
+        if (data) {
+          return data;
+        } else {
+          return 0;
+        }
+      } else {
+        throw new Error(data.message || 'Request failed');
+      }
+    } catch(err) {
+      console.error('API Error', err);
+      throw err;
+    }
+  }
 }
 
 export const apiClient = new ApiClient(URL);
