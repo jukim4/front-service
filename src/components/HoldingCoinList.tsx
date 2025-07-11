@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import { useAssetStore } from "@/store/assetStore";
 import { useMarketStore } from "@/store/marketStore";
@@ -37,22 +37,27 @@ export default function HoldingCointList() {
                   </td>
                 </tr>
               ) : (
-                assets.map((asset) => {
-                  const currentPrice = getCurrentPrice(asset.name, tickers);
-                  const valuation = asset.quantity * currentPrice;
-                  const profit = (((valuation - asset.total_cost) / asset.total_cost) * 100).toFixed(3);
-                  return (
-                    <tr key={asset.name} className="border-b hover:bg-gray-50">
-                      <td className="px-3 py-1 text-gray-800 whitespace-nowrap text-center">{asset.name.split('-')[1]}</td>
-                      <td className="px-3 py-1 text-gray-800 whitespace-nowrap text-center">{asset.name.split('-')[0]}</td>
-                      <td className="px-3 py-1 text-gray-800 whitespace-nowrap text-center">{asset.quantity}</td>
-                      <td className="px-3 py-1 text-gray-800 whitespace-nowrap text-center">{asset.average_cost.toLocaleString()} KRW</td>
-                      <td className="px-3 py-1 text-gray-800 whitespace-nowrap text-center">{currentPrice.toLocaleString()} KRW</td>
-                      <td className="px-3 py-1 text-gray-800 font-medium whitespace-nowrap text-center">{asset.total_cost.toLocaleString()} KRW</td>
-                      <td className="px-3 py-1 text-gray-800 whitespace-nowrap text-center">{profit} %</td>
-                    </tr>
-                  );
-                })
+                assets
+                  .filter(asset => asset.position === 0) // BUY만
+                  .map((asset) => {
+                    const currentPrice = getCurrentPrice(asset.market_code, tickers);
+                    const buyPrice = tickers[asset.market_code]?.trade_price || 1; // 오류 방지
+                    const quantity = asset.total_price / buyPrice;
+                    const valuation = quantity * currentPrice;
+                    const profitRate = ((valuation - asset.total_price) / asset.total_price) * 100;
+
+                    return (
+                      <tr key={asset.market_code} className="border-b hover:bg-gray-50">
+                        <td className="px-3 py-1 text-center text-gray-800">{asset.coin_ticker}</td>
+                        <td className="px-3 py-1 text-center text-gray-800">{asset.market_code}</td>
+                        <td className="px-3 py-1 text-center text-gray-800">{quantity.toFixed(6)}</td>
+                        <td className="px-3 py-1 text-center text-gray-800">{buyPrice.toLocaleString()} KRW</td>
+                        <td className="px-3 py-1 text-center text-gray-800">{currentPrice.toLocaleString()} KRW</td>
+                        <td className="px-3 py-1 text-center text-gray-800">{asset.total_price.toLocaleString()} KRW</td>
+                        <td className="px-3 py-1 text-center text-gray-800">{profitRate.toFixed(2)} %</td>
+                      </tr>
+                    );
+                  })
               )}
             </tbody>
           </table>

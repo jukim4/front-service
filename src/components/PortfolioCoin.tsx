@@ -1,117 +1,49 @@
-import React, { useRef, useEffect } from "react";
-import Chart from "chart.js/auto";
-import ChartDataLabels from "chartjs-plugin-datalabels";
+import { useEffect } from 'react';
+import Chart from 'chart.js/auto';
 
-interface Data {
-    label: string;
-    data: number;
-}
+type DoughnutData = {
+  label: string;
+  data: number;
+};
 
-interface PortfolioCoinProps {
-    datas: Data[];
-    canvasRef: React.RefObject<HTMLCanvasElement>;
-    size?: {
-        width: number;
-        height: number;
+type Props = {
+  datas: DoughnutData[];
+  canvasRef: React.RefObject<HTMLCanvasElement | null>;
+};
+
+const PortfolioCoin = ({ datas, canvasRef }: Props) => {
+  useEffect(() => {
+    if (!canvasRef.current) return;
+
+    const chartInstance = new Chart(canvasRef.current, {
+      type: 'doughnut',
+      data: {
+        labels: datas.map((d) => d.label),
+        datasets: [
+          {
+            data: datas.map((d) => d.data),
+            backgroundColor: ['#60a5fa', '#34d399', '#f87171', '#fbbf24'],
+            borderWidth: 1,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'bottom',
+          },
+        },
+      },
+    });
+
+    return () => {
+      chartInstance.destroy(); // 차트 인스턴스 제거
     };
-}
+  }, [datas, canvasRef]);
 
-// 보유자산 차트
-export default function PortfolioCoin({datas, canvasRef}: PortfolioCoinProps) {
-    const chartRef = useRef<Chart | null>(null);
+  return null;
+};
 
-    useEffect(() => {
-        if (!canvasRef.current) return;
-        const ctx = canvasRef.current.getContext("2d");
-        if (!ctx || !datas || datas.length === 0) return;
-
-        const threshold = 0.3;
-        const mainCoins = datas.filter((data) => data.data > threshold);
-        const etcCoins = datas.filter((data) => data.data <= threshold);
-        let etc = etcCoins.reduce((sum, d) => sum + d.data, 0);
-
-        const chartData = etc > 0 ? [...mainCoins, { label: "기타", data: etc }] : mainCoins;
-        const coinName = chartData.map((d) => d.label);
-        const coinData = chartData.map((d) => d.data);
-        const total = coinData.reduce((sum, price) => sum + price, 0);
-        const percentV = coinData.map(i => (i / total) * 100);
-
-        const fontSize = Math.max(Math.round(window.innerWidth / 130), 8);
-
-        const createChart = () => {
-            return new Chart(ctx, {
-                type: "doughnut",
-                data: {
-                    labels: coinName,
-                    datasets: [{
-                        data: percentV,
-                        backgroundColor: [
-                            "#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0", "#9966FF",
-                            "#FF9F40", "#C9CBCF", "#F67019", "#F53794", "#537BC4",
-                            "#ACC236", "#166A8F", "#00A950", "#58595B", "#8549BA"
-                        ],
-                        datalabels: {
-                            align: 'center',
-                            color: 'white',
-                            font: {
-                                weight: 'bold',
-                                size: fontSize,
-                            },
-                            formatter: (value: number) =>
-                                value < threshold ? null : `${value.toFixed(2)} %`
-                        }
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    animation: false,
-                    plugins: {
-                        legend: {
-                            position: 'right',
-                            labels: {
-                                font: {
-                                    size: fontSize + 2
-                                },
-                                generateLabels: (chart) => {
-                                    const datasets = chart.data.datasets;
-                                    const bgColors = datasets[0].backgroundColor as string[];
-                                    return datasets[0].data.map((val, idx) => {
-                                        const numericValue = typeof val === 'number' ? val : 0;
-                                        return {
-                                            text: `${chart.data.labels?.[idx] ?? ''}: ${numericValue.toFixed(2)} %`,
-                                            fillStyle: bgColors[idx],
-                                            index: idx,
-                                            strokeStyle: bgColors[idx]
-                                        };
-                                    });
-                                }
-                            }
-                        }
-                    }
-                },
-                plugins: [ChartDataLabels]
-            });
-        };
-
-        if (chartRef.current) chartRef.current.destroy();
-        chartRef.current = createChart();
-
-        const handleResize = () => {
-            if (chartRef.current) {
-                chartRef.current.destroy();
-                chartRef.current = createChart();
-            }
-        };
-
-        window.addEventListener("resize", handleResize);
-
-        return () => {
-            window.removeEventListener("resize", handleResize);
-            chartRef.current?.destroy();
-            chartRef.current = null;
-        };
-    }, [datas, canvasRef]);
-
-    return null;
-}
+export default PortfolioCoin;

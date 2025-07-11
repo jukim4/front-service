@@ -2,15 +2,14 @@ import { useAssetStore } from '@/store/assetStore';
 import { useMarketStore } from '@/store/marketStore';
 
 const ProfitSummary = () => {
-  const assets = useAssetStore(state => state.assets);
   const tickers = useMarketStore(state => state.tickers);
-  const getValuationSummary = useAssetStore(state => state.getValuationSummary);
-
+  const { assets, getValuationSummary } = useAssetStore();
   const displayData = getValuationSummary(assets, tickers);
 
   return (
     <div className="flex flex-col space-y-4">
       <div className="grid grid-cols-2 gap-2 ml-8 my-6 items-center">
+        {/* 좌측: 기간 누적 손익 */}
         <div className="flex flex-col items-start space-y-3 self-start">
           <span className="text-gray-500 font-medium">기간 누적 손익</span>
           <div className="flex space-x-2">
@@ -24,7 +23,7 @@ const ProfitSummary = () => {
           <div className="flex flex-col items-start">
             <span className="text-gray-500 font-medium">기간 누적 손익률</span>
             <span className="text-blue-500 font-semibold my-2">
-              {`${displayData.cumulativeProfitLossRate.toFixed(2)}%`}
+              {displayData.cumulativeProfitLossRate.toFixed(2)}%
             </span>
           </div>
           <div className="flex flex-col items-start">

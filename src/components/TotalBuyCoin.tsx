@@ -3,13 +3,12 @@
 import { useAssetStore } from "@/store/assetStore"
 import { useMarketStore } from "@/store/marketStore"
 
-// 보유 자산
 export default function TotalBuyCoin() {
   const { assets, getTotalValuation } = useAssetStore();
   const { tickers } = useMarketStore();
 
-  // 0: 코인 구매가의 합, 1: 총평가, 2: 총 보유자산, 3: 평가손익, 4: 총 수익률
   const result = getTotalValuation(assets, tickers);
+  const safeResult = Array.isArray(result) && result.length === 5 ? result : [0, 0, 0, 0, 0];
 
   return (
     <div className="overflow-x-auto">
@@ -18,12 +17,16 @@ export default function TotalBuyCoin() {
         <div className="space-y-6">
           <div className="flex flex-col space-y-1">
             <span className="text-base text-gray-600 font-medium">총 매수 코인</span>
-            <span className="text-3xl font-bold text-black">{result[0].toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+            <span className="text-3xl font-bold text-black">
+              {safeResult[0].toLocaleString(undefined, { maximumFractionDigits: 0 })}
+            </span>
           </div>
 
           <div className="flex justify-between">
             <span className="text-base text-gray-600 font-medium">총 평가</span>
-            <span className="text-lg font-semibold text-black">{result[1].toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+            <span className="text-lg font-semibold text-black">
+              {safeResult[1].toLocaleString(undefined, { maximumFractionDigits: 0 })}
+            </span>
           </div>
         </div>
 
@@ -31,20 +34,22 @@ export default function TotalBuyCoin() {
         <div className="space-y-6">
           <div className="flex flex-col space-y-1">
             <span className="text-base text-gray-600 font-medium">총 보유 자산</span>
-            <span className="text-3xl font-bold text-black">{result[2].toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+            <span className="text-3xl font-bold text-black">
+              {safeResult[2].toLocaleString(undefined, { maximumFractionDigits: 0 })}
+            </span>
           </div>
 
           <div className="flex justify-between">
             <span className="text-base text-gray-600 font-medium">평가 손익</span>
-            <span className={`text-lg font-semibold ${result[3] < 0 ? "text-blue-500" : "text-red-500"}`}>
-              {result[3].toLocaleString(undefined, { maximumFractionDigits: 0 })}
+            <span className={`text-lg font-semibold ${safeResult[3] < 0 ? "text-blue-500" : "text-red-500"}`}>
+              {safeResult[3].toLocaleString(undefined, { maximumFractionDigits: 0 })}
             </span>
           </div>
 
           <div className="flex justify-between">
             <span className="text-base text-gray-600 font-medium">수익률</span>
-            <span className={`text-lg font-semibold ${result[3] < 0 ? "text-blue-500" : "text-red-500"}`}>
-              {result[4].toLocaleString(undefined, { maximumFractionDigits: 0 })} %
+            <span className={`text-lg font-semibold ${safeResult[3] < 0 ? "text-blue-500" : "text-red-500"}`}>
+              {safeResult[4].toLocaleString(undefined, { maximumFractionDigits: 0 })} %
             </span>
           </div>
         </div>

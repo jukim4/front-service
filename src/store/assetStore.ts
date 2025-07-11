@@ -1,12 +1,12 @@
 import { create } from 'zustand';
 import { apiClient } from '@/lib/apiClient';
 
-type PortfolioItem = {
-  name: string;
-  quantity: number;
-  average_cost: number;
-  total_cost: number;
-}
+export type PortfolioItem = {
+  market_code: string; // 마켓코드 (ex. KRW-BTC)
+  position: number;     // 0 = BUY, 1 = SELL
+  total_price: number;  // 투입 금액
+  coin_ticker: string;  // BTC, ETH 등
+};
 
 interface AssetState {
   assets: PortfolioItem[];
@@ -15,7 +15,7 @@ interface AssetState {
   fetchPortfolio: () => void;
   getCurrentPrice: (market: string, tickers: Record<string, any>) => number;
   getTotalValuation: (assets: PortfolioItem[], tickers: Record<string, any>) => number[];
-  getDoughnutData: (assets: PortfolioItem[], tickers: Record<string, any>) => { label: string; data: number; }[];
+  getDoughnutData: (assets: PortfolioItem[], tickers: Record<string, any>) => { label: string; data: number }[];
   getValuationSummary: (assets: PortfolioItem[], tickers: Record<string, any>) => {
     totalInvestment: number;
     totalValuation: number;
@@ -23,134 +23,87 @@ interface AssetState {
     cumulativeProfitLossRate: number;
     averageInvestment: number;
   };
-  getCumulativeProfitLossByDate: (assets: PortfolioItem[], tickers: Record<string, any>) => { date: string; cumulativeProfitLossRate: number }[];
 }
 
-const getUserPortfolio = async () => {
-    const portfolio: PortfolioItem[] = await apiClient.userPorfolio();
-    const holdings = await apiClient.userHoldings();
-    const holding = holdings.asset;
+const getUserPortfolio = async (market_code?: string) => {
+  const portfolio: PortfolioItem[] = await apiClient.userPorfolio(market_code);
+  const holdings = await apiClient.userHoldings();
+  const holding = holdings.asset;
 
-    return {portfolio: portfolio, holdings: holding};
-}
+  return { portfolio, holdings: holding };
+};
 
 export const useAssetStore = create<AssetState>((set, get) => ({
+  assets: [],
+  holdings: 0,
 
-    assets: [],
-    holdings: 0,
+// API에서 유저 포트폴리오 및 보유 현금 정보를 가져와 상태에 저장
+  fetchPortfolio: async (market_code?: string) => {
+    const { portfolio, holdings } = await getUserPortfolio(market_code);
+    set({ assets: portfolio, holdings });
+  },
 
-    // user 포트폴리오 저장
-    fetchPortfolio: async () => {
-        const {portfolio, holdings} = await getUserPortfolio();
-        set({assets: portfolio, holdings: holdings})
-    },
+// tickers[market_code].trade_price를 이용해 현재가 가져옴
+  getCurrentPrice: (market: string, tickers: Record<string, any>) => {
+    return tickers[market]?.trade_price || 0;
+  },
+//총 매수 금액 (totalInvestment)과 현재 평가 금액 (totalValuation) 계산
+  getTotalValuation: (assets: PortfolioItem[], tickers: Record<string, any>) => {
+    const { getCurrentPrice } = get();
+    let totalInvestment = 0;
+    let totalValuation = 0;
 
-    // 현재가 가져오기
-    getCurrentPrice: (market: string, tickers: Record<string, any>) => {
-        const price = tickers[market]?.trade_price;
+    assets.filter(item => item.position === 0).forEach(item => {
+      const currentPrice = getCurrentPrice(item.market_code, tickers);
+      totalInvestment += item.total_price;
+      totalValuation += currentPrice * (item.total_price / currentPrice); // 수량 = total_price / currentPrice
+    });
 
-        if (price) {
-            return price;
-        }
-        return 0;
-    },
+    return [totalInvestment, totalValuation];
+  }, //totalValuation NaN 방지 해야함
 
-    getTotalValuation: (assets: PortfolioItem[], tickers: Record<string, any>) => {
-        const {getCurrentPrice, holdings} = get();
+  // 총 투자금, 평가 금액, 손익, 손익률, 평균 투자 금액 리턴
+  getValuationSummary: (assets: PortfolioItem[], tickers: Record<string, any>) => {
+    const { getCurrentPrice } = get();
+    const buyItems = assets.filter(item => item.position === 0);
 
-        // 총 매수 코인 가격
-        const total_price = assets.reduce((sum, asset) => sum + asset.total_cost, 0);
+    const totalInvestment = buyItems.reduce((sum, item) => sum + item.total_price, 0);
+    const totalValuation = buyItems.reduce((sum, item) => {
+      const currentPrice = getCurrentPrice(item.market_code, tickers);
+      return sum + currentPrice * (item.total_price / currentPrice);
+    }, 0);
 
-        // 현재가 x 보유 코인 개수
-        let valuations = assets.map((asset) => getCurrentPrice(asset.name, tickers) * asset.quantity);
-        let total_valuations = valuations.reduce((sum, price) => sum + price, 0); // 총평가
-        
+    const cumulativeProfitLoss = totalValuation - totalInvestment;
+    const cumulativeProfitLossRate = totalInvestment > 0 ? (cumulativeProfitLoss / totalInvestment) * 100 : 0;
+    const averageInvestment = buyItems.length > 0 ? totalInvestment / buyItems.length : 0;
 
-        let total_holding = total_valuations + holdings; // 총 보유자산
-        
-        let pl = total_valuations - total_price; // 평가손익
-        let total_rateReturn = pl/total_price * 100; // 총 수익률
+    return {
+      totalInvestment,
+      totalValuation,
+      cumulativeProfitLoss,
+      cumulativeProfitLossRate,
+      averageInvestment
+    };
+  },
 
-        
+  // 각 자산의 평가금액 비중을 퍼센트로 변환 (도넛 차트 등 시각화에 사용)
+  getDoughnutData: (assets: PortfolioItem[], tickers: Record<string, any>) => {
+  const { getCurrentPrice, getTotalValuation } = get();
+  const [, totalValuation] = getTotalValuation(assets, tickers);
 
-        let result = [total_price, total_valuations, total_holding, pl, total_rateReturn];
+  if (totalValuation === 0) return [];
 
-        return result;   
-    },
+  return assets
+    .filter(asset => asset.position === 0)
+    .map(asset => {
+      const value = asset.total_price;
+      return {
+        label: asset.coin_ticker,
+        data: Number(((value / totalValuation) * 100).toFixed(2)),
+      };
+    });
+}
 
-    getDoughnutData: (assets: PortfolioItem[], tickers: Record<string, any>) => {
-        const { getCurrentPrice, getTotalValuation } = get();
-        const result = getTotalValuation(assets, tickers);
-        
-        const data = assets.map((asset) => {
-            // asset.market_code로 현재가를 가져와서 계산
-            const current = getCurrentPrice(asset.name, tickers);
-            return {
-                label: asset.name,
-                data: Number((current * asset.total_cost) / result[1]) * 100,
-            }
-        })
-        return data;
-    },
 
-    getValuationSummary: (assets: PortfolioItem[], tickers: Record<string, any>) => {
-        const { getCurrentPrice } = get();
-    
-        const totalInvestment = assets.reduce((sum, asset) => sum + asset.total_cost, 0);
-        const totalValuation = assets.reduce(
-          (sum, asset) => sum + getCurrentPrice(asset.name, tickers) * asset.quantity,
-          0
-        );
-    
-        const cumulativeProfitLoss = totalValuation - totalInvestment;
-        const cumulativeProfitLossRate = totalInvestment === 0 ? 0 : (cumulativeProfitLoss / totalInvestment) * 100;
-        const averageInvestment = assets.length === 0 ? 0 : totalInvestment / assets.length;
-    
-        return {
-          totalInvestment,
-          totalValuation,
-          cumulativeProfitLoss,
-          cumulativeProfitLossRate,
-          averageInvestment,
-        };
-      },
-    
-      // 날짜별 누적 수익률 배열 반환 함수 (예시: 날짜 순서대로 계산)
-      getCumulativeProfitLossByDate: (assets: PortfolioItem[], tickers: Record<string, any>) => {
-        if (!assets.length) return [];
-    
-        // 날짜 기준으로 오름차순 정렬
-        const sortedAssets = [...assets].sort((a, b) => new Date(a.name).getTime() - new Date(b.name).getTime());
-    
-        // 날짜별 누적 계산 저장
-        const dateMap: Record<string, PortfolioItem[]> = {};
-    
-        sortedAssets.forEach((asset) => {
-          if (!dateMap[asset.name]) dateMap[asset.name] = [];
-          dateMap[asset.name].push(asset);
-        });
-    
-        const results: { date: string; cumulativeProfitLossRate: number }[] = [];
-    
-        // 누적자산과 누적투자금 계산용 변수
-        let cumulativeAssets: PortfolioItem[] = [];
-    
-        // 날짜 오름차순 순회하면서 누적값 계산
-        Object.keys(dateMap)
-          .sort((a, b) => new Date(a).getTime() - new Date(b).getTime())
-          .forEach((date) => {
-            // 현재 날짜 자산을 누적 리스트에 추가
-            cumulativeAssets = cumulativeAssets.concat(dateMap[date]);
-    
-            // 현재 누적 자산에 대해 계산
-            const { totalInvestment, cumulativeProfitLossRate } = get().getValuationSummary(
-              cumulativeAssets,
-              tickers
-            );
-    
-            results.push({ date, cumulativeProfitLossRate });
-          });
-    
-        return results;
-      },
-}))
+
+}));
