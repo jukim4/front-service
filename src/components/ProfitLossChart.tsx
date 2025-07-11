@@ -1,9 +1,8 @@
 import React, { useEffect, useRef } from "react";
 import Chart from "chart.js/auto";
-import { useAssetStore, useFetchPortfolio } from "@/store/assetStore";
+import { useAssetStore } from "@/store/assetStore";
 
 export default function PortfolioChart() {
-  useFetchPortfolio(); // 데이터 불러오기 훅 실행
   const chartRef = useRef<Chart | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const { assets } = useAssetStore();
@@ -21,11 +20,11 @@ export default function PortfolioChart() {
     let labels: string[] = [];
     let data: number[] = [];
     let backgroundColors: string[] = [];
-    const maxAbs = Math.max(...assets.map((v) => Math.abs(v.totalCost))) || 1;
+    const maxAbs = Math.max(...assets.map((v) => Math.abs(v.total_cost))) || 1;
 
     if (assets.length > 0) {
-      labels = assets.map((asset) => asset.marketCode);
-      data = assets.map((asset) => asset.totalCost);
+      labels = assets.map((asset) => asset.name);
+      data = assets.map((asset) => asset.total_cost);
       backgroundColors = data.map((amount) =>
         amount >= 0
           ? `rgba(54, 162, 235, ${0.3 + 0.7 * (amount / maxAbs)})`

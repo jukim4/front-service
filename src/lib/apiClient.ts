@@ -205,7 +205,7 @@ class ApiClient {
   }
 
   // user holdings
-  async userInfo() {
+  async userHoldings() {
     const token = tokenUtils.returnTokens().accessToken;
     try {
   const res = await fetch(`${this.baseURL}/api/v1/asset`, {
@@ -266,6 +266,7 @@ class ApiClient {
       });
 
       const data = await res.json();
+
       if (res.status === 200) {
         if (data) {
           return data;
@@ -281,7 +282,7 @@ class ApiClient {
     }
   }
 
-  // 미체결 주문
+  // 미체결
   async pendingOrders() {
     const token = tokenUtils.returnTokens().accessToken;
     try {

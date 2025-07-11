@@ -4,10 +4,9 @@ import { format } from "date-fns";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import MarketListComponent from "@/components/MarketListComponent";
-import { useMarketStore } from "@/store/marketStore";
 import { apiClient } from "@/lib/apiClient";
 
 type PendingOrder = {
@@ -28,18 +27,18 @@ export default function WaitOrders() {
   const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set()); // 선택된 주문 ID를 추적하는 Set
 
   const fetchPendingOrders = async () => {
-    try {
-      const result = await apiClient.pendingOrders();
-      if (result !== 0) {
-        setOrders(result);
-      } else {
-        console.error("No pending orders found.");
-      }
-    } catch (error) {
-      console.error("Error fetching pending orders:", error);
+  try {
+    const result = await apiClient.pendingOrders();
+    if (result !== 0) {
+      setOrders(result);
+    } else {
+      console.error("No pending orders found.");
     }
-  };
-  
+  } catch (error) {
+    console.error("Error fetching pending orders:", error);
+  }
+};
+
 
   useEffect(() => {
     fetchPendingOrders();

@@ -1,25 +1,21 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { useRouter } from "next/navigation";
 import TotalBuyCoin from '@/components/TotalBuyCoin';
 import { useAssetStore } from '@/store/assetStore';
 import { useMarketStore } from '@/store/marketStore';
 import PortfolioCoin from '@/components/PortfolioCoin';
-import HoldingCoinList from '@/components/HoldingCoinList';
-import MarketListCompoenet from "@/components/MarketListComponent"
-import { useFetchPortfolio } from '@/store/assetStore';
+import HoldingCointList from '@/components/HoldingCoinList';
+import MarketListCompoenet from '@/components/MarketListComponent';
 
 export default function Holdings() {
-  useFetchPortfolio();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("보유자산");
 
-  const { assets, getDoughnutData } = useAssetStore();
+  const { assets, getDoughnutData, fetchPortfolio } = useAssetStore();
   const { tickers } = useMarketStore();
-
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const doughnutData = getDoughnutData(assets, tickers);
 
   const tabs = ["보유자산", "투자손익"];
 
@@ -31,6 +27,10 @@ export default function Holdings() {
       router.push('/portfolio/profit-loss');
     }
   };
+
+  useEffect(() => {
+    fetchPortfolio();
+  }, []);
 
   return (
     <main className="grid grid-cols-3 gap-2 min-h-screen p-4 md:p-8 bg-gray-50">
@@ -44,8 +44,8 @@ export default function Holdings() {
                 key={tab}
                 onClick={() => handleTabChange(tab)}
                 className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === tab
-                  ? "text-blue-600 border-blue-600"
-                  : "text-gray-500 border-transparent hover:text-gray-700"
+                    ? "text-blue-600 border-blue-600"
+                    : "text-gray-500 border-transparent hover:text-gray-700"
                   }`}
               >
                 {tab}
@@ -54,6 +54,7 @@ export default function Holdings() {
           </div>
         </div>
 
+        {/* Tab Content (보유자산 탭) */}
         {activeTab === "보유자산" && (
           <div className="flex flex-col w-full max-w-6xl pl-4 bg-white">
             <TotalBuyCoin />
@@ -63,36 +64,34 @@ export default function Holdings() {
 
               <div className="flex flex-col md:flex-row md:flex-wrap">
                 {/* 도넛 차트 */}
-                <div className="w-full flex justify-center ">
-                  <div className="w-full md:w-2/5 max-w-full aspect-square relative">
+                <div className="w-full flex justify-center">
+                  <div className="w-full md:w-2/3 max-w-full aspect-square relative">
                     <canvas
                       ref={canvasRef}
                       id="total-doughnut"
-                      className="w-full h-full "
-                    />
-                    {doughnutData.length === 0 && (
-                      <div className="absolute inset-0 flex items-center justify-center text-gray-400 text-lg">
-                        보유 비중(%)
-                      </div>
-                    )}
-                    {/* 차트 생성용 훅 */}
-                    <PortfolioCoin
-                      datas={doughnutData}
-                      canvasRef={canvasRef}
+                      className="w-full h-full"
                     />
                   </div>
+                </div>
+
+                {/* 차트 데이터 */}
+                <div className="w-full md:w-1/2 overflow-hidden">
+                  <PortfolioCoin
+                    datas={getDoughnutData(assets, tickers)}
+                    canvasRef={canvasRef}
+                  />
                 </div>
               </div>
             </div>
 
-            <HoldingCoinList />
+            <HoldingCointList />
           </div>
         )}
       </div>
 
-      {/* Right Section */}
+      {/* Right (검색 및 마켓 영역) */}
       <div className="relative col-span-1">
-        <MarketListCompoenet />
+        <MarketListCompoenet></MarketListCompoenet>
       </div>
     </main>
   );
