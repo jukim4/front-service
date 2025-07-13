@@ -1,28 +1,35 @@
-import { useEffect } from 'react';
+'use client';
+
+import { useEffect, useRef } from 'react';
 import Chart from 'chart.js/auto';
 
-type DoughnutData = {
+export type DoughnutData = {
   label: string;
   data: number;
 };
 
 type Props = {
   datas: DoughnutData[];
-  canvasRef: React.RefObject<HTMLCanvasElement | null>;
 };
 
-const PortfolioCoin = ({ datas, canvasRef }: Props) => {
+const PortfolioCoin = ({ datas }: Props) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
   useEffect(() => {
     if (!canvasRef.current) return;
+
+    const hasData = datas && datas.length > 0 && datas.some(d => d.data > 0);
 
     const chartInstance = new Chart(canvasRef.current, {
       type: 'doughnut',
       data: {
-        labels: datas.map((d) => d.label),
+        labels: hasData ? datas.map(d => d.label) : ['보유한 자산 없음'],
         datasets: [
           {
-            data: datas.map((d) => d.data),
-            backgroundColor: ['#60a5fa', '#34d399', '#f87171', '#fbbf24'],
+            data: hasData ? datas.map(d => d.data) : [1], // 더미 데이터 1개
+            backgroundColor: hasData
+              ? ['#60a5fa', '#34d399', '#f87171', '#fbbf24']
+              : ['#e5e7eb'], // 회색 배경
             borderWidth: 1,
           },
         ],
@@ -30,20 +37,34 @@ const PortfolioCoin = ({ datas, canvasRef }: Props) => {
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        animation: {
+          animateRotate: false,  
+          animateScale: false,    
+        },
         plugins: {
           legend: {
-            position: 'bottom',
+            position: 'right',
+            labels: {
+              color: hasData ? '#000' : '#6b7280', // 데이터 없을 때 회색
+            },
+          },
+          tooltip: {
+            enabled: hasData,
           },
         },
       },
     });
 
     return () => {
-      chartInstance.destroy(); // 차트 인스턴스 제거
+      chartInstance.destroy();
     };
-  }, [datas, canvasRef]);
+  }, [datas]);
 
-  return null;
+  return (
+    <div className="w-full md:w-[40%] max-w-full aspect-square relative mx-auto">
+      <canvas ref={canvasRef} className="w-full h-full" />
+    </div>
+  );
 };
 
 export default PortfolioCoin;
