@@ -14,6 +14,7 @@ type TradeHistory = {
   orderPosition: 'BUY' | 'SELL';
   tradeQuantity: number;
   tradePrice: number;
+  concludedAt: string; // 거래 시간 추가
 };
 
 interface AssetState {
@@ -38,6 +39,16 @@ interface AssetState {
     tickers: Record<string, any>,
     totalHoldings: number
   ) => number[];
+  
+  // 새로운 메소드 인터페이스 추가
+  getProfitLossDataFromTradeHistory: (
+    trades: TradeHistory[],
+    tickers: Record<string, any>
+  ) => {
+    cumulativeProfitLoss: number;
+    cumulativeProfitLossRate: number;
+    averageInvestment: number;
+  };
 }
 
 const getUserPortfolio = async (market_code?: string) => {
@@ -196,4 +207,83 @@ export const useAssetStore = create<AssetState>((set, get) => ({
       profitLossRate
     ];
   },
+
+ // 기간별 손익 데이터 계산 메소드 구현
+getProfitLossDataFromTradeHistory: (
+  trades: TradeHistory[],
+  tickers: Record<string, any>
+) => {
+  const map = new Map<string, { quantity: number; totalCost: number }>();
+  let totalBuyAmount = 0;        // 총 매수 금액
+  let totalSellAmount = 0;       // 총 매도 금액
+  let realizedProfitLoss = 0;    // 실현된 손익
+  
+  // 각 거래에 따른 포지션 계산
+  trades.forEach((trade: TradeHistory) => {
+    const { marketCode, orderPosition, tradeQuantity, tradePrice } = trade;
+    const entry = map.get(marketCode) || { quantity: 0, totalCost: 0 };
+    
+    if (orderPosition === "BUY") {
+      entry.quantity += tradeQuantity;
+      entry.totalCost += tradeQuantity * tradePrice;
+      totalBuyAmount += tradeQuantity * tradePrice;
+    } 
+    else if (orderPosition === "SELL") {
+      // 평균 매수 가격 계산
+      const avgBuyPrice = entry.quantity > 0 ? entry.totalCost / entry.quantity : 0;
+      
+      // 해당 매도에 대한 실현 손익 계산
+      const sellAmount = tradeQuantity * tradePrice;
+      const buyAmount = tradeQuantity * avgBuyPrice;
+      const tradeProfitLoss = sellAmount - buyAmount;
+      
+      // 전체 실현 손익에 더함
+      realizedProfitLoss += tradeProfitLoss;
+      totalSellAmount += sellAmount;
+      
+      // 포지션 업데이트
+      entry.quantity -= tradeQuantity;
+      entry.totalCost = entry.quantity * avgBuyPrice; // 남은 포지션에 대한 비용
+    }
+    
+    map.set(marketCode, entry);
+  });
+  
+  // 현재 보유 중인 자산의 미실현 손익 계산
+  let totalHoldingCost = 0;     // 보유 자산 비용
+  let totalCurrentValue = 0;    // 보유 자산의 현재 가치
+  
+  for (const [marketCode, { quantity, totalCost }] of Array.from(map.entries())) {
+    if (quantity <= 0) continue;
+    
+    const currentPrice = tickers[marketCode]?.trade_price ?? 0;
+    totalHoldingCost += totalCost;
+    totalCurrentValue += quantity * currentPrice;
+  }
+  
+  // 미실현 손익
+  const unrealizedProfitLoss = totalCurrentValue - totalHoldingCost;
+  
+  // 총 손익 = 실현 손익 + 미실현 손익
+  const cumulativeProfitLoss = realizedProfitLoss + unrealizedProfitLoss;
+  
+  // 손익률 계산
+  // totalBuyAmount가 0이면 분모가 0이 되므로 조건 처리
+  const cumulativeProfitLossRate = totalBuyAmount > 0 
+    ? (cumulativeProfitLoss / totalBuyAmount) * 100 
+    : 0;
+    
+  // 기간 평균 투자 금액 = 총 매수 금액
+  const averageInvestment = totalBuyAmount;
+  
+  return {
+    cumulativeProfitLoss,
+    cumulativeProfitLossRate,
+    averageInvestment,
+    realizedProfitLoss,       
+    unrealizedProfitLoss,      
+    totalBuyAmount,            
+    totalSellAmount            
+  };
+}
 }));

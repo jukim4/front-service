@@ -174,13 +174,13 @@ export default function WaitOrders() {
                                 onChange={() => handleSelectOrder(pendingorder.id)}
                               />
                             </td>
-                            <td className="px-4 py-2 text-gray-500">{format(pendingorder.orderRequestedAt, "yyyy-MM-dd HH:mm:ss")}</td>
-                            <td className="px-4 py-2">{pendingorder.orderPosition}</td>
-                            <td className="px-4 py-2">{pendingorder.marketCode}</td>
-                            <td className="px-4 py-2">{pendingorder.orderPrice}</td>
-                            <td className="px-4 py-2">{pendingorder.orderPrice}</td>
-                            <td className="px-4 py-2">{pendingorder.totalQuantity}</td>
-                            <td className="px-4 py-2">{pendingorder.totalQuantity}</td>
+                            <td className="text-center text-gray-500 text-xs py-3">{format(pendingorder.orderRequestedAt, "yyyy-MM-dd HH:mm:ss")}</td>
+                            <td className="text-center text-gray-500 text-xs py-3">{pendingorder.orderPosition}</td>
+                            <td className="text-center text-gray-500 text-xs py-3">{pendingorder.marketCode}</td>
+                            <td className="text-center text-gray-500 text-xs py-3">{pendingorder.orderPrice}</td>
+                            <td className="text-center text-gray-500 text-xs py-3">{pendingorder.orderPrice}</td>
+                            <td className="text-center text-gray-500 text-xs py-3">{pendingorder.totalQuantity}</td>
+                            <td className="text-center text-gray-500 text-xs py-3">{pendingorder.totalQuantity}</td>
                           </tr>
                         ))
                       )}
