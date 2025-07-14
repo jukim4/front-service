@@ -98,23 +98,33 @@ export default function TradeForm() {
   }, [price, coinCnt, inputMode])
 
    useEffect(() => {
-    if (!useAuthStore.getState().isAuthenticated) return;
+    if (!useAuthStore.getState().isAuthenticated) {
+      setHoldingsCoin('0');
+      return;
+    };
       fetchAsset();
   }, []);
 
   // 선택된 마켓의 보유 코인 개수
   const getPortfolio = async () => {
-    const portfolio: PortfolioItem[] = await apiClient.userPorfolio();
-    const filterPortfolio = portfolio.filter((item) => item.name === selectedMarket)
-    if (filterPortfolio.length !== 0 ){
-      setcurrentPortpolio(filterPortfolio[0]);
-    } else {
+    try {
+      const portfolio: PortfolioItem[] = await apiClient.userPorfolio();
+      const filterPortfolio = portfolio.filter((item) => item.name === selectedMarket)
+      if (filterPortfolio.length !== 0 ){
+        setcurrentPortpolio(filterPortfolio[0]);
+      } else {
+        setcurrentPortpolio({name: selectedMarket, quantity: 0, average_cost: 0, total_cost: 0});
+      }
+    } catch {
       setcurrentPortpolio({name: selectedMarket, quantity: 0, average_cost: 0, total_cost: 0});
     }
+    
   }
 
   const fetchAsset = async () => {
     const asset = await apiClient.userHoldings();
+
+    // 로그인 하지 않았을 경우
     setHoldingsCoin(new Intl.NumberFormat('ko-KR').format(Number(asset.asset)));
   };
 
@@ -123,6 +133,8 @@ export default function TradeForm() {
       alert("로그인 후에 이용 가능한 서비스입니다")
       return;
     }
+
+    if (Number(totalPrice.replace(/,/g, '')) === 0) return;
 
     // 최소 결제 금액
     if ( (activeTab === '매도' && selectedPosition === '시장가' && Number(totalPrice.replace(/,/g, '')) > currentPortpolio.quantity)) {
