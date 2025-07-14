@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useMarketStore } from "@/store/marketStore";
 import { useAssetStore } from "@/store/assetStore";
 import { apiClient } from "@/lib/apiClient";
+import { formatNumber, safeNumber } from "@/lib/numberUtils";
 
 type TradeHistory = {
   marketCode: string;
@@ -47,14 +48,14 @@ export default function TotalBuyCoin() {
           <div className="flex flex-col space-y-1">
             <span className="text-base text-gray-600 font-medium">총 매수 코인</span>
             <span className="text-3xl font-bold text-black">
-              {totalBuy.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+              {(formatNumber(safeNumber(totalBuy)))}
             </span>
           </div>
 
           <div className="flex justify-between">
             <span className="text-base text-gray-600 font-medium">총 평가</span>
             <span className="text-lg font-semibold text-black">
-              {totalValuation.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+              {formatNumber(safeNumber(totalValuation))}
             </span>
           </div>
         </div>
@@ -64,21 +65,21 @@ export default function TotalBuyCoin() {
           <div className="flex flex-col space-y-1">
             <span className="text-base text-gray-600 font-medium">총 보유 자산</span>
             <span className="text-3xl font-bold text-black">
-              {totalValuation.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+              {formatNumber(safeNumber(totalAsset))}
             </span>
           </div>
 
           <div className="flex justify-between">
             <span className="text-base text-gray-600 font-medium">평가 손익</span>
             <span className={`text-lg font-semibold ${profit < 0 ? "text-blue-500" : "text-red-500"}`}>
-              {profit.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+              {formatNumber(safeNumber(profit))}
             </span>
           </div>
 
           <div className="flex justify-between">
             <span className="text-base text-gray-600 font-medium">수익률</span>
             <span className={`text-lg font-semibold ${profit < 0 ? "text-blue-500" : "text-red-500"}`}>
-              {profitRate.toLocaleString(undefined, { maximumFractionDigits: 2 })} %
+              {formatNumber(safeNumber(profitRate), 2)} %
             </span>
           </div>
         </div>
