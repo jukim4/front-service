@@ -1,21 +1,25 @@
 'use client'
 
 import React, { useEffect, useRef, useMemo, useCallback } from "react";
-import dynamic from 'next/dynamic';
-
 import { useCandleStore } from "@/store/candleStore";
 import { useMarketStore } from "@/store/marketStore";
+import { ChunkErrorBoundary } from "@/components/ChunkErrorBoundary";
+import { createDynamicComponentWithRetry } from "@/lib/dynamicImportUtils";
 
 
 type TimeUnit = 'millisecond' | 'second' | 'minute' | 'hour' | 'day' | 'week' | 'month' | 'quarter' | 'year';
 
-// 동적 import로 ChartComponent 불러오기
-const ChartComponent = dynamic(() => import("@/lib/chartUtils"), {
-  ssr: false,
-  loading: () => <div className="flex items-center justify-center h-96">
-    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-  </div>
-});
+// 재시도 로직을 포함한 동적 import로 ChartComponent 불러오기
+const ChartComponent = createDynamicComponentWithRetry(
+  () => import("@/lib/chartUtils"),
+  {
+    loading: () => (
+      <div className="flex items-center justify-center h-96">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    )
+  }
+);
 
 export const CandleChart = () => {
   const { candles, error, selected_time, timeUnit, isFetching, set_selectedTime, set_timeUnit, fetchAdditionCandles } = useCandleStore();
@@ -116,13 +120,15 @@ export const CandleChart = () => {
       </div>
 
       {candles.length > 0 && (
-        <ChartComponent 
-          key={`${selectedMarket}-${selected_time.time}-${selected_time.cnt}`}
-          market={selectedMarket} 
-          candle={candles} 
-          canvasRef={canvasRef} 
-          timeUnit={timeUnit as 'millisecond' | 'second' | 'minute' | 'hour' | 'day' | 'week' | 'month' | 'quarter' | 'year'}
-        />
+        <ChunkErrorBoundary>
+          <ChartComponent 
+            key={`${selectedMarket}-${selected_time.time}-${selected_time.cnt}`}
+            market={selectedMarket} 
+            candle={candles} 
+            canvasRef={canvasRef} 
+            timeUnit={timeUnit as 'millisecond' | 'second' | 'minute' | 'hour' | 'day' | 'week' | 'month' | 'quarter' | 'year'}
+          />
+        </ChunkErrorBoundary>
       )}
       
     </div>
