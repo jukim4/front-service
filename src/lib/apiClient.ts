@@ -20,14 +20,14 @@ class ApiClient {
 
     } else if (!isValid) {
       console.error("AccessToken is not valid");
-      if(!refreshToken) {
+      if (!refreshToken) {
         useAuthStore.setState({ isAuthenticated: false });
         return;
       }
       this.refreshToken();
       window.location.href = '/login';
     }
-    useAuthStore.setState({ isAuthenticated: !accessToken ? false: true });
+    useAuthStore.setState({ isAuthenticated: !accessToken ? false : true });
 
   }
 
@@ -42,7 +42,7 @@ class ApiClient {
 
       const res = await fetch(`${this.baseURL}/api/v1/refresh`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${refresh}`},
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${refresh}` },
         credentials: 'include',
       });
 
@@ -75,8 +75,8 @@ class ApiClient {
     });
 
     return res.json().then((data) => {
-      if(res.status === 200) {
-        useAuthStore.setState({isAuthenticated: true});
+      if (res.status === 200) {
+        useAuthStore.setState({ isAuthenticated: true });
         return {
           user: null,
           accessToken: data.accessToken,
@@ -92,10 +92,11 @@ class ApiClient {
   async logout() {
     const ref = await fetch(`${this.baseURL}/api/v1/logout`, {
       method: 'DELETE',
-      headers: { 'Content-Type': 'application/json',
+      headers: {
+        'Content-Type': 'application/json',
         'Authorization': `Bearer ${tokenUtils.returnTokens().accessToken}` // 현재 accessToken 사용 
-       },
-       credentials: 'include',
+      },
+      credentials: 'include',
     });
 
     if (ref.status === 200) {
@@ -146,40 +147,40 @@ class ApiClient {
     const token = tokenUtils.returnTokens().accessToken
     try {
 
-      if(position === "buy") {
-        
-          const res = await fetch(`${this.baseURL}/api/v1/orders/market/${position}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-            body: JSON.stringify({ coin_ticker, position, total_price: total, market_code }),
-            credentials: 'include',
-          });
+      if (position === "buy") {
 
-          if (res.status === 200) {
-            return {message: "주문이 성공하였습니다!", success: true};
-          } else {
-            return {message: "주문이 실패하였습니다", success: false};
-          }
+        const res = await fetch(`${this.baseURL}/api/v1/orders/market/${position}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ coin_ticker, position, total_price: total, market_code }),
+          credentials: 'include',
+        });
+
+        if (res.status === 200) {
+          return { message: "주문이 성공하였습니다!", success: true };
+        } else {
+          return { message: "주문이 실패하였습니다", success: false };
+        }
 
       } else {
         const res = await fetch(`${this.baseURL}/api/v1/orders/market/${position}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-            body: JSON.stringify({ coin_ticker, position, total_quantity: total, market_code }),
-            credentials: 'include',
-          });
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ coin_ticker, position, total_quantity: total, market_code }),
+          credentials: 'include',
+        });
 
-          if (res.status === 200) {
-            return {message: "주문이 성공하였습니다!", success: true};
-          } else {
-            return {message: "주문이 실패하였습니다", success: false};
-          }
+        if (res.status === 200) {
+          return { message: "주문이 성공하였습니다!", success: true };
+        } else {
+          return { message: "주문이 실패하였습니다", success: false };
+        }
       }
-   
-      } catch (err) {
-        console.error("API Error: ", err);
-        throw err;
-      }
+
+    } catch (err) {
+      console.error("API Error: ", err);
+      throw err;
+    }
   }
 
   // 지정가 매수
@@ -189,16 +190,16 @@ class ApiClient {
       const res = await fetch(`${this.baseURL}/api/v1/orders/limit`, {
         method: "POST",
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ market_code, coin_ticker, position, order_price, order_quantity, total_order_price}),
+        body: JSON.stringify({ market_code, coin_ticker, position, order_price, order_quantity, total_order_price }),
         credentials: 'include',
       });
 
       if (res.status === 200) {
-        return {message: "주문이 성공하였습니다!", success: true};
+        return { message: "주문이 성공하였습니다!", success: true };
       } else {
-        return {message: "주문이 실패하였습니다", success: false};
+        return { message: "주문이 실패하였습니다", success: false };
       }
-    } catch(err) {
+    } catch (err) {
       console.error("API Error: ", err);
       throw err;
     }
@@ -208,32 +209,37 @@ class ApiClient {
   async userHoldings() {
     const token = tokenUtils.returnTokens().accessToken;
     try {
-  const res = await fetch(`${this.baseURL}/api/v1/asset`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
-    },
-  });
+      const res = await fetch(`${this.baseURL}/api/v1/asset`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
 
-  const data = await res.json(); // await 사용
+      const data = await res.json(); // await 사용
 
-  if (res.status === 200) {
-    return data;
-  } else {
-    throw new Error(data.message || 'Request failed');
-  }
-} catch (err) {
-  console.error('API Error:', err);
-  throw err; // 상위로 에러 전달
-}
+      if (res.status === 200) {
+        return data;
+      } else {
+        throw new Error(data.message || 'Request failed');
+      }
+    } catch (err) {
+      console.error('API Error:', err);
+      throw err; // 상위로 에러 전달
+    }
   }
 
   // 포트폴리오
-  async userPorfolio() {
+  async userPorfolio(market_code?: string) {
     const token = tokenUtils.returnTokens().accessToken;
     try {
-      const res = await fetch(`${this.baseURL}/api/v1/portfolio`, {
+      let url = `${this.baseURL}/api/v1/portfolio`;
+      if (market_code) {
+        url += `?market_code=${encodeURIComponent(market_code)}`;
+      }
+
+      const res = await fetch(url, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -242,16 +248,17 @@ class ApiClient {
       });
 
       const data = await res.json();
-      if(res.status === 200) {
+      if (res.status === 200) {
         return data.data;
       } else {
         throw new Error(data.message || 'Request failed');
       }
-    } catch(err) {
+    } catch (err) {
       console.error('API Error', err);
       throw err;
     }
   }
+
 
   // 거래내역
   async tradeHistory() {
@@ -276,7 +283,7 @@ class ApiClient {
       } else {
         throw new Error(data.message || 'Request failed');
       }
-    } catch(err) {
+    } catch (err) {
       console.error('API Error', err);
       throw err;
     }
@@ -304,7 +311,7 @@ class ApiClient {
       } else {
         throw new Error(data.message || 'Request failed');
       }
-    } catch(err) {
+    } catch (err) {
       console.error('API Error', err);
       throw err;
     }
