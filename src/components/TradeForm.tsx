@@ -263,6 +263,11 @@ export default function TradeForm() {
         <span className="text-sm">보유코인 (KRW)</span>
         <span className="text-sm font-medium">{new Intl.NumberFormat('ko-KR').format(currentPortpolio.total_cost)} KRW</span>
       </div>
+      
+      <div className="px-4 py-2 flex justify-between">
+        <span className="text-sm">보유수량 ({selectedMarket.split('-')[1]})</span>
+        <span className="text-sm font-medium">{new Intl.NumberFormat('ko-KR', { maximumFractionDigits: 8 }).format(currentPortpolio.quantity)} {selectedMarket.split('-')[1]}</span>
+      </div>
 
       {/* Price Input */}
       <div>
