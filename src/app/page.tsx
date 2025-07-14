@@ -1,9 +1,12 @@
-
 "use client"
+
+import { useAuthStore } from "@/store/authStore";
 
 import Link from "next/link";
 
 export default function Page() {
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+
   return (
     <main className="min-h-screen">
       <div className="relative w-full h-screen snap-start">
@@ -31,11 +34,18 @@ export default function Page() {
                     지금 바로 시작하세요
                   </button>
                 </Link>
+                {/* <Link href="/signup">
+                  <button className="px-6 py-2 bg-white text-blue-700 border border-blue-700 text-sm font-semibold rounded-md shadow hover:bg-blue-50 transition">
+                    회원가입
+                  </button>
+                </Link> */}
+                {!isAuthenticated &&
                 <Link href="/signup">
                   <button className="px-6 py-2 bg-white text-blue-700 border border-blue-700 text-sm font-semibold rounded-md shadow hover:bg-blue-50 transition">
                     회원가입
                   </button>
                 </Link>
+                }
               </div>
             </div>
           </div>
@@ -137,11 +147,13 @@ export default function Page() {
                   지금 바로 시작하세요
                 </button>
               </Link>
+              {!isAuthenticated && 
               <Link href="/signup">
                 <button className="px-6 py-3 bg-white text-blue-700 border border-blue-700 text-sm font-semibold rounded-md shadow hover:bg-blue-50 transition">
                   회원가입
                 </button>
               </Link>
+              }
             </div>
           </div>
         </div>

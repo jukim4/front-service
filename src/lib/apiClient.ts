@@ -1,5 +1,6 @@
 import { useAuthStore } from '@/store/authStore';
 import { tokenUtils } from './tokenUtils';
+import Cookies from 'js-cookie';
 
 const URL = process.env.NEXT_PUBLIC_URL || 'http://localhost';
 
@@ -48,7 +49,7 @@ class ApiClient {
 
       if (res.status === 200) {
         res.json().then((data) => {
-          tokenUtils.updateTokens(data.accessToken, data.refreshToken);
+          // tokenUtils.updateTokens(data.accessToken, data.refreshToken);
         });
 
         return true;
@@ -100,6 +101,7 @@ class ApiClient {
     });
 
     if (ref.status === 200) {
+      Cookies.remove('token'); // 쿠키에 저장된 토큰 삭제
       localStorage.clear(); // 토큰 초기화
       useAuthStore.setState({ isAuthenticated: false });
       window.location.href = '/';
@@ -233,6 +235,8 @@ class ApiClient {
   // 포트폴리오
   async userPorfolio(market_code?: string) {
     const token = tokenUtils.returnTokens().accessToken;
+    if (!token) return false;
+    
     try {
       let url = `${this.baseURL}/api/v1/portfolio`;
       if (market_code) {

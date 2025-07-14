@@ -135,8 +135,16 @@ const WriteChart: React.FC<WriteChartProps> = ({ market, candle, canvasRef, time
                     },
                 },
                 plugins: {
+                    // 교차선 제거 후 툴팁으로 대체
                     tooltip: {
-                        enabled: false,
+                        intersect: false,
+                        mode: 'index',
+                        callbacks: {
+                            label: function (context: any) {
+                                const {o, h, l, c} = context.raw;
+                                return `시가: ${o}, 고가: ${h}, 저가: ${l}, 종가: ${c}`;
+                            }
+                        }
                     },
                     zoom: {
                         pan: {
@@ -155,103 +163,103 @@ const WriteChart: React.FC<WriteChartProps> = ({ market, candle, canvasRef, time
                     },
                 },
                 // 마우스가 차트 위에 있을 때 이벤트 발생
-                onHover: function (event, chartElement, chart) {
+                // onHover: function (event, chartElement, chart) {
 
-                    if (event.native) {
-                        // 차트 위 가장 가까운 차트 요소 가지고 옴
-                        const elements = chart.getElementsAtEventForMode(
-                            event.native,
-                            "nearest",
-                            { intersect: false },
-                            true
-                        );
-                        // 데이터를 lastCrosshair에 저장
-                        if (elements.length) {
-                            const index = elements[0].index;
-                            const data = chart.data.datasets[0].data[index];
-                            if(event && event.x !== null && event.y !== null) {
-                                chart_data = {x: event.x, y: event.y, data: data};
-                            }
-                        }
-                    }
-                },
+                //     if (event.native) {
+                //         // 차트 위 가장 가까운 차트 요소 가지고 옴
+                //         const elements = chart.getElementsAtEventForMode(
+                //             event.native,
+                //             "nearest",
+                //             { intersect: false },
+                //             true
+                //         );
+                //         // 데이터를 lastCrosshair에 저장
+                //         if (elements.length) {
+                //             const index = elements[0].index;
+                //             const data = chart.data.datasets[0].data[index];
+                //             if(event && event.x !== null && event.y !== null) {
+                //                 chart_data = {x: event.x, y: event.y, data: data};
+                //             }
+                //         }
+                //     }
+                // },
             },
     });
 
     chartRef.current = chart;
 
-    if(chart.ctx) {
-          drawCrosshair();
-    }
+    // if(chart.ctx) {
+    //       drawCrosshair();
+    // }
 
-    // 교차선 구현
-    function drawCrosshair() {
-        const chart = chartRef.current;
-        if (!chart) return;
+    // // 교차선 구현
+    // function drawCrosshair() {
+    //     const chart = chartRef.current;
+    //     if (!chart) return;
 
-        const chartArea = chart.chartArea;
-        const ctx = chart.ctx;
-        const xAxis = chart.scales['x'];
-        const yAxis = chart.scales['y'];
+    //     const chartArea = chart.chartArea;
+    //     const ctx = chart.ctx;
+    //     const xAxis = chart.scales['x'];
+    //     const yAxis = chart.scales['y'];
 
         
-        try {
-            chart.update('none'); // 애니메이션 없이 업데이트
-        } catch (e: any) {
-            if (e.message.includes("Cannot read properties of null (reading 'ownerDocument')")) {
-                // 에러 무시
-            } else {
-                return e;
-            }
-        }
+    //     try {
+    //         chart.update('none'); // 애니메이션 없이 업데이트
+    //     } catch (e: any) {
+    //         if (e.message.includes("Cannot read properties of null (reading 'ownerDocument')")) {
+    //             // 에러 무시
+    //         } else {
+    //             return e;
+    //         }
+    //     }
 
                 
-        if (chart_data) {
-            const {x: X, y, data} = chart_data;
-            const {o, h, l, c, x: time} = data;
+    //     if (chart_data) {
+    //         const {x: X, y, data} = chart_data;
+    //         const {o, h, l, c, x: time} = data;
 
-            // cavas 요소가 로드 안된 경우
-            if(!ctx) {
-                return;
-            }
+    //         // cavas 요소가 로드 안된 경우
+    //         if(!ctx) {
+    //             return;
+    //         }
                 
-            ctx.save();
-            ctx.beginPath();
-            ctx.setLineDash([]); // 실선
-            ctx.strokeStyle = "#0000000" // 선 색상
-            ctx.lineWidth = 1; // 선 굵기
+    //         ctx.save();
+    //         ctx.beginPath();
+    //         ctx.setLineDash([]); // 실선
+    //         ctx.strokeStyle = "#0000000" // 선 색상
+    //         ctx.lineWidth = 1; // 선 굵기
 
-            ctx.fillStyle = 'black'; // 글씨
-            ctx.font = '8px Arial'; // 폰트 설정
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'top' // 텍스트 위치
+    //         ctx.fillStyle = 'black'; // 글씨
+    //         ctx.font = '8px Arial'; // 폰트 설정
+    //         ctx.textAlign = 'center';
+    //         ctx.textBaseline = 'top' // 텍스트 위치
                 
-            // 수직선
-            ctx.moveTo(X, chartArea.top);
-            ctx.lineTo(X, chartArea.bottom);
+    //         // 수직선
+    //         ctx.moveTo(X, chartArea.top);
+    //         ctx.lineTo(X, chartArea.bottom);
                 
-            // 수평선 
-            ctx.moveTo(chartArea.left, y);
-            ctx.lineTo(chartArea.right, y);
+    //         // 수평선 
+    //         ctx.moveTo(chartArea.left, y);
+    //         ctx.lineTo(chartArea.right, y);
 
-            // 데이터 정보
-            ctx.fillText(`시가: ${o}`, xAxis.left + 32, yAxis.top + 10);
-            ctx.fillText(`고가: ${h}`, xAxis.left + 32, yAxis.top + 20);
-            ctx.fillText(`시간: ${format(time, 'yyyy.MM.dd HH:mm:ss')}`, xAxis.left + 48, yAxis.top + 30);
-            ctx.fillText(`저가: ${l}`, xAxis.left + 110, yAxis.top + 10);
-            ctx.fillText(`종가: ${c}`, xAxis.left + 110, yAxis.top + 20);
+    //         // 데이터 정보
+    //         ctx.fillText(`시가: ${o}`, xAxis.left + 32, yAxis.top + 10);
+    //         ctx.fillText(`고가: ${h}`, xAxis.left + 32, yAxis.top + 20);
+    //         ctx.fillText(`시간: ${format(time, 'yyyy.MM.dd HH:mm:ss')}`, xAxis.left + 48, yAxis.top + 30);
+    //         ctx.fillText(`저가: ${l}`, xAxis.left + 110, yAxis.top + 10);
+    //         ctx.fillText(`종가: ${c}`, xAxis.left + 110, yAxis.top + 20);
                 
-            ctx.stroke();
-            ctx.restore();
-        }
+    //         ctx.stroke();
+    //         ctx.restore();
+    //     }
         
-        // 성능 최적화: 마우스가 차트 위에 있을 때만 교차선 그리기
-        if (chart_data) {
-            animationFrameRef.current = requestAnimationFrame(drawCrosshair);
-        } else {
-            animationFrameRef.current = requestAnimationFrame(drawCrosshair);
-        }
-    };
+    //     // 성능 최적화: 마우스가 차트 위에 있을 때만 교차선 그리기
+    //     if (chart_data) {
+    //         animationFrameRef.current = requestAnimationFrame(drawCrosshair);
+    //     } else {
+    //         animationFrameRef.current = requestAnimationFrame(drawCrosshair);
+    //     }
+    // };
 
     // 컴포넌트 언마운트 시 정리
     return () => {

@@ -9,12 +9,7 @@ export default function InvestmentsPage() {
 
   // URL parameter에서 초기 탭 설정
   useEffect(() => {
-    if (!useAuthStore.getState().isAuthenticated) {
-      // 인증되지 않은 경우 로그인 페이지로 리다이렉트
-      router.push('/login');
-    } else {
-      router.push('/investments/transaction-history');
-    }
+    router.push('/investments/transaction-history');
   }, []);
 
   return (

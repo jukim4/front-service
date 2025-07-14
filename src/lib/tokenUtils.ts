@@ -1,17 +1,19 @@
-import { useAuthStore } from "@/store/authStore";
+import Cookies from 'js-cookie'
 
 export const tokenUtils = {
 
     // localstorage에 토큰 저장 함수
     updateTokens: (accessToken: string | null, refreshToken: string | null) => {
-      localStorage.setItem('accessToken', accessToken ?? '');
+      Cookies.set('token', accessToken ?? '', {
+        expires: 2, // 2일
+      });
       localStorage.setItem('refreshToken', refreshToken ?? '');
     },
     
     // localstorage에서 토큰 반환 함수
     returnTokens: () => {
       return (
-        {'accessToken': localStorage.getItem('accessToken'),
+        {'accessToken': Cookies.get('token'),
          'refreshToken': localStorage.getItem('refreshToken')}
       )
     },

@@ -9,7 +9,6 @@ export const useAuth = () => {
   const handleLogin = async (username: string, passwd: string) => {
     try {
       const { user, accessToken, refreshToken } = await apiClient.login(username, passwd);
-      // login(user, accessToken, refreshToken);
       tokenUtils.updateTokens(accessToken, refreshToken);
       return { success: true };
     } catch (error: any) {
