@@ -23,8 +23,12 @@ export const useAuth = () => {
 
   const handleSingup = async (email: string, nickname: string, passwd: string, username: string) => {
     try {
-      const message = await apiClient.signup(email, nickname, passwd, username);
-      return { success: true, message: message };
+      const result = await apiClient.signup(email, nickname, passwd, username);
+      if (result.success) {
+        return { success: result.success, message: result.message };
+      } else {
+        return { success: false, message: result.message };
+      }
     } catch (error: any) {
       return { success: false, error: error.message || '회원가입 실패' };
     }
@@ -39,10 +43,9 @@ export const useAuth = () => {
     const { success, message } = await apiClient.passwdChange(email, currentPwd, newPwd);
 
     if (success) {
-      alert(message);
-      window.location.href = '/mypage';
+      return { success, message };;
     } else {
-      alert(message);
+      return { success, message };
     }
   };
 
