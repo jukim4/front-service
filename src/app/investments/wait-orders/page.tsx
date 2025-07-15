@@ -148,13 +148,13 @@ export default function WaitOrders() {
                             }}
                           />
                         </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">시간</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">미체결</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">거래종목</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">감시가격</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">주문가격</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">주문수량</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">미체결량</th>
+                        <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">주문시간</th>
+                        <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">주문종류</th>
+                        <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">거래종목</th>
+                        <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">거래단가</th>
+                        <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">주문금액</th>
+                        <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">주문수량</th>
+                        <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">미체결량</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
@@ -177,8 +177,8 @@ export default function WaitOrders() {
                             <td className="text-center text-gray-500 text-xs py-3">{format(pendingorder.orderRequestedAt, "yyyy-MM-dd HH:mm:ss")}</td>
                             <td className="text-center text-gray-500 text-xs py-3">{pendingorder.orderPosition}</td>
                             <td className="text-center text-gray-500 text-xs py-3">{pendingorder.marketCode}</td>
-                            <td className="text-center text-gray-500 text-xs py-3">{pendingorder.orderPrice}</td>
-                            <td className="text-center text-gray-500 text-xs py-3">{pendingorder.orderPrice}</td>
+                            <td className="text-center text-gray-500 text-xs py-3">{pendingorder.orderPrice.toLocaleString()}</td>
+                            <td className="text-center text-gray-500 text-xs py-3">{Math.floor(pendingorder.orderPrice * pendingorder.totalQuantity).toLocaleString()}</td>
                             <td className="text-center text-gray-500 text-xs py-3">{pendingorder.totalQuantity}</td>
                             <td className="text-center text-gray-500 text-xs py-3">{pendingorder.totalQuantity}</td>
                           </tr>
