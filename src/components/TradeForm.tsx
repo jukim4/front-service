@@ -130,7 +130,6 @@ export default function TradeForm() {
 
   const submitOrders = async (tab: string): Promise<void> => {
     if (!useAuthStore.getState().isAuthenticated) {
-      alert("로그인 후에 이용 가능한 서비스입니다")
       return;
     }
 
@@ -298,18 +297,18 @@ export default function TradeForm() {
               }
             }}
             className={`flex-1 border rounded-l p-2 text-right ${
-              selectedPosition === '시장가' ? 'bg-gray-100 cursor-not-allowed' : ''
+              selectedPosition === '시장가' ? 'bg-gray-50 cursor-not-allowed' : ''
             }`}
             placeholder="가격을 입력하세요"
             inputMode="decimal"
             pattern="[0-9.]*"
-            disabled={selectedPosition === '시장가'}
-            readOnly={selectedPosition === '시장가'}
+            disabled={!useAuthStore.getState().isAuthenticated || selectedPosition === '시장가'}
+            readOnly={!useAuthStore.getState().isAuthenticated || selectedPosition === '시장가'}
           />
           <div className="flex border-t border-r border-b rounded-r">
             <button 
               className={`px-3 py-2 text-gray-600 ${
-                selectedPosition === '시장가' ? 'bg-gray-100 cursor-not-allowed' : 'hover:bg-gray-100'
+                (!useAuthStore.getState().isAuthenticated || selectedPosition === '시장가') ? 'bg-gray-50 cursor-not-allowed' : 'hover:bg-gray-100'
               }`}
               onClick={() => {
                 if (selectedPosition === '시장가') return;
@@ -325,13 +324,13 @@ export default function TradeForm() {
                   setCoinCnt(0);
                 }
               }}
-              disabled={selectedPosition === '시장가'}
+              disabled={!useAuthStore.getState().isAuthenticated || selectedPosition === '시장가'}
             >
               −
             </button>
             <button 
               className={`px-3 py-2 text-gray-600 ${
-                selectedPosition === '시장가' ? 'bg-gray-100 cursor-not-allowed' : 'hover:bg-gray-100'
+                (!useAuthStore.getState().isAuthenticated || selectedPosition === '시장가') ? 'bg-gray-50 cursor-not-allowed' : 'hover:bg-gray-100'
               }`}
               onClick={() => {
                 if (selectedPosition === '시장가') return;
@@ -347,7 +346,7 @@ export default function TradeForm() {
                   setCoinCnt(0);
                 }
               }}
-              disabled={selectedPosition === '시장가'}
+              disabled={!useAuthStore.getState().isAuthenticated || selectedPosition === '시장가'}
             >
               +
             </button>
@@ -386,7 +385,9 @@ export default function TradeForm() {
            }
          }}
          inputMode="decimal"
-         pattern="[0-9.]*" />
+         pattern="[0-9.]*"
+         disabled={!useAuthStore.getState().isAuthenticated}
+         readOnly={!useAuthStore.getState().isAuthenticated} />
       </div>
 
       {/* Asset Ratio Selection */}
