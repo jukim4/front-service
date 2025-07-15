@@ -3,13 +3,11 @@
 import React, { useEffect, useRef, useMemo, useCallback } from "react";
 import { useCandleStore } from "@/store/candleStore";
 import { useMarketStore } from "@/store/marketStore";
-import { ChunkErrorBoundary } from "@/components/ChunkErrorBoundary";
 import { createDynamicComponentWithRetry } from "@/lib/dynamicImportUtils";
-
 
 type TimeUnit = 'millisecond' | 'second' | 'minute' | 'hour' | 'day' | 'week' | 'month' | 'quarter' | 'year';
 
-// 재시도 로직을 포함한 동적 import로 ChartComponent 불러오기
+// Chunk 에러 시 자동 새로고침하는 동적 import
 const ChartComponent = createDynamicComponentWithRetry(
   () => import("@/lib/chartUtils"),
   {
@@ -120,15 +118,13 @@ export const CandleChart = () => {
       </div>
 
       {candles.length > 0 && (
-        <ChunkErrorBoundary>
-          <ChartComponent 
-            key={`${selectedMarket}-${selected_time.time}-${selected_time.cnt}`}
-            market={selectedMarket} 
-            candle={candles} 
-            canvasRef={canvasRef} 
-            timeUnit={timeUnit as 'millisecond' | 'second' | 'minute' | 'hour' | 'day' | 'week' | 'month' | 'quarter' | 'year'}
-          />
-        </ChunkErrorBoundary>
+        <ChartComponent 
+          key={`${selectedMarket}-${selected_time.time}-${selected_time.cnt}`}
+          market={selectedMarket} 
+          candle={candles} 
+          canvasRef={canvasRef} 
+          timeUnit={timeUnit as 'millisecond' | 'second' | 'minute' | 'hour' | 'day' | 'week' | 'month' | 'quarter' | 'year'}
+        />
       )}
       
     </div>
