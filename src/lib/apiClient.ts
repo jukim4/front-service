@@ -90,7 +90,7 @@ class ApiClient {
       } else {
         return {
           success: 1,
-          message: '비밀번호와 이름을 정확히 입력하였는지 확인해주세요',
+          message: '이름 혹은 비밀번호가 일치하지 않습니다. 입력한 내용을 다시 확인해 주세요.',
           user: {
             accessToken: null,
             refreshToken: null,
@@ -140,8 +140,9 @@ class ApiClient {
       body: JSON.stringify({ email, currentPwd, newPwd }),
     });
 
-    if (res.status === 200) {
-      return { success: true, message: 'Password changed successfully' };
+    if (res.status === 201) {
+      const data = await res.json();
+      return { success: true, message: data.message };
     }
     else {
       const errorData = await res.json();
@@ -160,10 +161,10 @@ class ApiClient {
     if (res.status === 201) {
       const data = await res.json();
       window.location.href = '/login';
-      return data.message;
+      return {success: true, message: data.message};
     } else {
       const error = await res.text();
-      return error;
+      return {success: false, message: error};
     }
   }
 
