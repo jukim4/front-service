@@ -3,8 +3,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 
-import { useAuthStore } from '@/store/authStore';
-
 type SignupFormProps = {
   onSwitch?: () => void;
 };
@@ -16,7 +14,8 @@ export default function SignupForm({ onSwitch }: SignupFormProps) {
   const [nickname, setNickName] = useState('');
   const { handleSingup } = useAuth(); // Assuming useAuth hook is available
 
-  const setUser = useAuthStore((state) => state.setUser);
+  const [ checkSignup, setCheckSignup ] = useState(false); // 회원가입 가능 여부
+  const [ signupInfo, setSignupInfo ] = useState<string | undefined>();
   
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -25,15 +24,13 @@ export default function SignupForm({ onSwitch }: SignupFormProps) {
     try {
       const result = await handleSingup(email, nickname, password, username);
       if (result.success) {
-        // 임시 user 정보 저장
-        setUser({ email, nickname, username})
-        alert(result.message);
+
       } else {
-        alert(result.message);
-      }
-      
+        setCheckSignup(true);
+        setSignupInfo(result.message);
+      }   
     } catch (err: any) {
-      alert('회원가입 실패: ' + err.message);
+      console.error('회원가입 실패: ' + err.message);
     }
   };
 
@@ -80,6 +77,9 @@ export default function SignupForm({ onSwitch }: SignupFormProps) {
       >
         회원가입
       </button>
+           {checkSignup &&
+      <p className='text-sm text-center text-red-500'>{signupInfo}</p>
+      }
       {onSwitch && (
         <p
           onClick={onSwitch}

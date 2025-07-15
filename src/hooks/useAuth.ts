@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { apiClient } from '@/lib/apiClient';
 import { tokenUtils } from '@/lib/tokenUtils';
@@ -8,9 +7,15 @@ export const useAuth = () => {
 
   const handleLogin = async (username: string, passwd: string) => {
     try {
-      const { user, accessToken, refreshToken } = await apiClient.login(username, passwd);
-      tokenUtils.updateTokens(accessToken, refreshToken);
-      return { success: true };
+      const { success, message, user } = await apiClient.login(username, passwd);
+      if (success === 0) {
+        tokenUtils.updateTokens(user.accessToken, user.refreshToken);
+        return { success: true, message: message };
+      } else if (success === 1) {
+        return { success: false, message: message };
+      } else {
+        return { success: false, message: message };
+      }
     } catch (error: any) {
       return { success: false, error: error.response.data.message };
     }
@@ -18,8 +23,12 @@ export const useAuth = () => {
 
   const handleSingup = async (email: string, nickname: string, passwd: string, username: string) => {
     try {
-      await apiClient.signup(email, nickname, passwd, username);
-      return { success: true, message: '회원가입 성공' };
+      const result = await apiClient.signup(email, nickname, passwd, username);
+      if (result.success) {
+        return { success: result.success, message: result.message };
+      } else {
+        return { success: false, message: result.message };
+      }
     } catch (error: any) {
       return { success: false, error: error.message || '회원가입 실패' };
     }
@@ -34,10 +43,9 @@ export const useAuth = () => {
     const { success, message } = await apiClient.passwdChange(email, currentPwd, newPwd);
 
     if (success) {
-      alert(message);
-      window.location.href = '/mypage';
+      return { success, message };;
     } else {
-      alert(message);
+      return { success, message };
     }
   };
 

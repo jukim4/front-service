@@ -40,6 +40,8 @@ export default function TransactionHistoryPage() {
   const [dateRange, setDateRange] = useState<[Date | null, Date | null]>([new Date(), new Date()]);
   const [calenderStart, calenderEnd] = dateRange;
   const { tickers, markets } = useMarketStore();
+  const [ checkMonth, setCheckMonth ] = useState(false);
+  const [ monthInfo, setMonthInfo ] = useState('');
 
   const [searchTerm, setSearchTerm] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
@@ -116,7 +118,8 @@ export default function TransactionHistoryPage() {
       const diff = Math.abs((start.getTime() - end.getTime()) / (1000 * 60 * 60 * 24));
 
       if (diff > 180) {
-        alert('최대 6개월까지만 선택할 수 있습니다.')
+        setCheckMonth(true);
+        setMonthInfo('최대 6개월까지만 선택할 수 있습니다.');
         setDateRange([new Date(), new Date()]);
         return;
       } else {
@@ -183,8 +186,15 @@ export default function TransactionHistoryPage() {
                     inline
                   ></DatePicker>
 
-                  <div className="mt-2 text-right">
-                    <button className="px-3 py-1 text-xs border rounded bg-blue-50 border-blue-300 text-blue-600" onClick={() => setShowPicker(false)}>
+                  <div className="mt-2 text-right grid-cols-2">
+                    {checkMonth &&
+                    <p className="text-xs text-red-600 mb-2">{monthInfo}</p>
+                    }
+                    <button onClick={() => {
+                      setShowPicker(false);
+                      setCheckMonth(false);
+                    }}
+                     className="px-3 py-1 text-xs border rounded bg-blue-50 border-blue-300 text-blue-600" >
                       확인
                     </button>
                   </div>

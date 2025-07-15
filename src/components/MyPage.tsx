@@ -8,47 +8,9 @@ import Link from 'next/link';
 import { useAuthStore } from '@/store/authStore';
 
 export default function MyPage() {
-    const [preview, setPreview] = useState<string | null>(null);
-    const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [bankruptcyStep, setBankruptcyStep] = useState<'none' | 'confirm' | 'done'>('none');
 
-    // 임시 사용자 정보
     const {user} = useAuthStore();
-
-    const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file && file.size <= 1024 * 1024) {
-            setSelectedFile(file);
-            const previewUrl = URL.createObjectURL(file);
-            setPreview(previewUrl);
-            await uploadImage(file);
-        } else {
-            alert('1MB 이하의 이미지만 업로드할 수 있습니다.');
-        }
-    };
-
-    const uploadImage = async (file: File) => {
-        const formData = new FormData();
-        formData.append('image', file);
-
-        try {
-            const res = await axios.post('/api/upload-profile', formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
-            });
-
-            const uploadedUrl = res.data.url;
-            setPreview(uploadedUrl);
-        } catch (err) {
-            console.error(err);
-            alert('이미지 업로드 실패');
-        }
-    };
-
-    const triggerFileInput = () => {
-        document.getElementById('profile-upload')?.click();
-    };
 
     const openBankruptcyModal = () => setBankruptcyStep('confirm');
     const closeBankruptcyModal = () => setBankruptcyStep('none');
@@ -57,54 +19,10 @@ export default function MyPage() {
 
     return (
         <div className="min-h-[90vh] bg-gray-100 p-10">
-            <div className="max-w-5xl mx-auto bg-white p-10 rounded-md shadow-md flex flex-col md:flex-row gap-10">
-                {/* 왼쪽 */}
-                <div className="flex flex-col items-center text-center w-full md:w-1/3 border-r border-gray-200 pr-6">
-                    <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center mb-4">
-                        {preview ? (
-                            <Image
-                                src={preview}
-                                alt="profile"
-                                width={128}
-                                height={128}
-                                className="object-cover w-full h-full"
-                            />
-                        ) : (
-                            <Image
-                                src="/default-profile.png"
-                                alt="default profile"
-                                width={128}
-                                height={128}
-                                className="object-cover w-full h-full"
-                            />
-                        )}
-                    </div>
-                    <p className="text-sm text-gray-500 mb-2">
-                        최대 1MB까지 업로드 가능합니다.<br />
-                        회원 이미지는 원형으로 출력됩니다.
-                    </p>
-                    <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleImageChange}
-                        id="profile-upload"
-                        className="hidden"
-                    />
-                    <button
-                        onClick={triggerFileInput}
-                        className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 text-sm"
-                    >
-                        프로필 사진 업로드
-                    </button>
-                    <button className="text-sm text-blue-700 underline mt-3">
-                        <Link href="/password">
-                        비밀번호변경
-                        </Link>
-                    </button>
-                </div>
+            <div className="max-w-5xl mx-auto bg-white p-10 rounded-md shadow-md flex flex-col gap-10">
 
                 {/* 오른쪽 */}
-                <div className="w-full md:w-2/3 space-y-6">
+                <div className="w-full space-y-6">
 
                     <div className="flex justify-end gap-x-2">
                         <button
@@ -155,7 +73,13 @@ export default function MyPage() {
                                 🔽
                             </div>
                         </div>
+                        <button className="text-sm text-blue-700 underline mt-3 pt-4">
+                        <Link href="/password">
+                        비밀번호변경
+                        </Link>
+                    </button>
                     </div>
+
 
                     <div className="pt-6 border-t">
                         <h2 className="text-lg font-semibold mb-3">회원 탈퇴</h2>

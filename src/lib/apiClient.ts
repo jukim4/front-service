@@ -75,18 +75,39 @@ class ApiClient {
       credentials: 'include', // 쿠키를 포함하여 요청
     });
 
-    return res.json().then((data) => {
+    try {
       if (res.status === 200) {
+        const data = await res.json();
         useAuthStore.setState({ isAuthenticated: true });
         return {
-          user: null,
-          accessToken: data.accessToken,
-          refreshToken: data.refreshToken,
-        }
+          success: 0,
+          message: '로그인 성공하셨습니다!',
+          user: {
+            accessToken: data.accessToken,
+            refreshToken: data.refreshToken,
+          },
+        };
       } else {
-        throw new Error(data.message || 'Login Failed');
+        return {
+          success: 1,
+          message: '이름 혹은 비밀번호가 일치하지 않습니다. 입력한 내용을 다시 확인해 주세요.',
+          user: {
+            accessToken: null,
+            refreshToken: null,
+          }
+        };
       }
-    })
+    } catch (err) {
+      console.error("API ERROR: " + err);
+      return {
+          success: 2,
+          message: 'API ERROR',
+          user: {
+            accessToken: null,
+            refreshToken: null,
+          }
+        };
+    }
   }
 
   // 로그아웃
@@ -119,8 +140,9 @@ class ApiClient {
       body: JSON.stringify({ email, currentPwd, newPwd }),
     });
 
-    if (res.status === 200) {
-      return { success: true, message: 'Password changed successfully' };
+    if (res.status === 201) {
+      const data = await res.json();
+      return { success: true, message: data.message };
     }
     else {
       const errorData = await res.json();
@@ -136,12 +158,14 @@ class ApiClient {
       body: JSON.stringify({ email, nickname, passwd, username }),
     });
 
-    if (!res.ok) {
+    if (res.status === 201) {
+      const data = await res.json();
+      window.location.href = '/login';
+      return {success: true, message: data.message};
+    } else {
       const error = await res.text();
-      throw new Error(error);
+      return {success: false, message: error};
     }
-
-    window.location.href = '/login';
   }
 
   // 시장가 매수
@@ -229,6 +253,31 @@ class ApiClient {
     } catch (err) {
       console.error('API Error:', err);
       throw err; // 상위로 에러 전달
+    }
+  }
+
+  // user infos
+  async userInfo() {
+    const token = tokenUtils.returnTokens().accessToken;
+    try {
+      const res = await fetch(`${this.baseURL}/api/v1/infos`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      const data = await res.json();
+      
+      if (res.status === 200) {
+        return {email: data.email, nickname: data.nickname, username: data.username};
+      } else {
+        throw new Error(data.message || 'Request failed');
+      }
+    } catch (err) {
+      console.error("API ERROR: ", err);
+      throw err;
     }
   }
 

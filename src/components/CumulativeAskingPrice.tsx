@@ -1,4 +1,3 @@
-import { useEffect } from "react"
 import { useMarketStore } from "@/store/marketStore"
 
 export default function CumulativeAskingPrice() {

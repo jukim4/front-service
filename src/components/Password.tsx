@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 
 import { useAuth } from "@/hooks/useAuth";
 import { useAuthStore } from "@/store/authStore";
@@ -11,16 +10,17 @@ export default function Password() {
   const [currentPw, setCurrentPw] = useState("");
   const [newPw, setNewPw] = useState("");
   const [confirmPw, setConfirmPw] = useState("");
-  const router = useRouter();
   const { handleChangePasswd } = useAuth();
+  const [ checkFail, setCheckFail ] = useState(false);
+  const [ failInfo, setFailInfo ] = useState<string | undefined>();
 
-  // 임시 사용자 정보
   const { user } = useAuthStore();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newPw !== confirmPw) {
-      alert("새 비밀번호가 일치하지 않습니다.");
+      setCheckFail(true);
+      setFailInfo("새 비밀번호가 일치하지 않습니다.");
       return;
     }
 
@@ -30,9 +30,16 @@ export default function Password() {
     }
     
     try {
-      await handleChangePasswd(user.email, currentPw, newPw)
+      const result = await handleChangePasswd(user.email, currentPw, newPw);
+      
+      if(result.success) {
+        window.location.href ='/mypage';
+      } else {
+        setCheckFail(true);
+        setFailInfo(result.message);
+      }
     } catch(err: any) {
-      alert("비밀번호 변경 실패" + err.message);
+      console.error("비밀번호 변경 실패" + err.message);
     }
   };
 
@@ -94,6 +101,9 @@ export default function Password() {
       >
         확인
       </button>
+      {checkFail &&
+      <p className="text-sm text-center text-red-600 py-4">{failInfo}</p>
+      }
     </form>
   );
 }

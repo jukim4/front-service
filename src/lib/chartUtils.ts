@@ -1,9 +1,8 @@
 import React, { useEffect, useRef } from "react";
-import { Chart, TimeScale, Tooltip, Legend, ChartType, LinearScale } from "chart.js/auto";
+import { Chart, TimeScale, Tooltip, Legend, LinearScale } from "chart.js/auto";
 import { CandlestickController, CandlestickElement } from 'chartjs-chart-financial';
 import "chartjs-adapter-date-fns"; // 날짜 포맷팅을 위한 어댑터
 import zoomPlugin from 'chartjs-plugin-zoom';
-import { format } from "date-fns";
 
 // Chart.js candlestick chart controller 등록
 Chart.register(

@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
+import { useAuthStore } from '@/store/authStore';
+import { apiClient } from '@/lib/apiClient';
 
 type LoginFormProps = {
   onSwitch?: () => void;
@@ -14,6 +16,10 @@ export default function LoginForm({ onSwitch }: LoginFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
   const router = useRouter();
+  const setUser = useAuthStore((state) => state.setUser);
+
+  const [ checkLogin, setCheckLogin ] = useState(false); // 로그인 실패 확인 변수
+  const [ loginInfo, setLoginInfo ] = useState<string | undefined>();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,11 +29,19 @@ export default function LoginForm({ onSwitch }: LoginFormProps) {
       const result = await login(username, passwd);
       if (result.success) {
         router.push('/'); // 메인 페이지로 리다이렉트
+
+        try {
+          const result = await apiClient.userInfo();
+          setUser({email: result.email, nickname: result.nickname, username: result.username});
+        } catch (err: any) {
+          console.error('API ERROR: ' + err.meesage);
+        }
       } else {
-        alert('로그인 실패: ' + result.error);
+        setCheckLogin(true);
+        setLoginInfo(result.message);
       }
     } catch (err: any) {
-      alert('로그인 실패: ' + err.message);
+      console.error('로그인 실패: ' + err.message);
     } finally {
       setIsLoading(false);
     }
@@ -61,6 +75,9 @@ export default function LoginForm({ onSwitch }: LoginFormProps) {
       >
         {isLoading ? '로그인 중...' : '로그인'}
       </button>
+      {checkLogin && 
+      <p className="text-sm text-center text-red-600">{loginInfo}</p>
+      }
       {onSwitch && (
         <p
           onClick={onSwitch}
