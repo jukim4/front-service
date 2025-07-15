@@ -10,6 +10,48 @@ import OrderBookView from "@/components/OrderBookView"
 import CandleChart from "@/components/CandleChart"
 import MarketListCompoenet from "@/components/MarketListComponent"
 
+// ChunkLoadError 자동 새로고침 핸들러
+const setupChunkErrorHandler = () => {
+  const RELOAD_KEY = 'chunk-error-reload';
+  
+  const handleError = (event: ErrorEvent) => {
+    const error = event.error;
+    if (error && error.name === 'ChunkLoadError') {
+      // 이미 새로고침했는지 확인
+      const hasReloaded = sessionStorage.getItem(RELOAD_KEY);
+      if (!hasReloaded) {
+        sessionStorage.setItem(RELOAD_KEY, 'true');
+        window.location.reload();
+      }
+    }
+  };
+
+  const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+    const error = event.reason;
+    if (error && (error.name === 'ChunkLoadError' || (error.message && error.message.includes('Loading chunk')))) {
+      // 이미 새로고침했는지 확인
+      const hasReloaded = sessionStorage.getItem(RELOAD_KEY);
+      if (!hasReloaded) {
+        sessionStorage.setItem(RELOAD_KEY, 'true');
+        window.location.reload();
+      }
+    }
+  };
+
+  // 페이지 로드 시 이전 reload 기록 제거
+  window.addEventListener('load', () => {
+    sessionStorage.removeItem(RELOAD_KEY);
+  });
+
+  window.addEventListener('error', handleError);
+  window.addEventListener('unhandledrejection', handleUnhandledRejection);
+
+  return () => {
+    window.removeEventListener('error', handleError);
+    window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+  };
+};
+
 // useSearchParams를 사용하는 컴포넌트들을 별도로 분리
 function ExchangeContent() {
   const searchParams = useSearchParams();
@@ -84,6 +126,11 @@ function ExchangeLoading() {
 }
 
 export default function ExchangePage() {
+  useEffect(() => {
+    const cleanup = setupChunkErrorHandler();
+    return cleanup;
+  }, []);
+
   return (
     <Suspense fallback={<ExchangeLoading />}>
       <ExchangeContent />

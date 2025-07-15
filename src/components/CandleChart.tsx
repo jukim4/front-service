@@ -3,12 +3,12 @@
 import React, { useEffect, useRef, useMemo, useCallback } from "react";
 import { useCandleStore } from "@/store/candleStore";
 import { useMarketStore } from "@/store/marketStore";
-import { createDynamicComponentWithRetry } from "@/lib/dynamicImportUtils";
+import { createDynamicComponent } from "@/lib/dynamicImportUtils";
 
 type TimeUnit = 'millisecond' | 'second' | 'minute' | 'hour' | 'day' | 'week' | 'month' | 'quarter' | 'year';
 
-// Chunk 에러 시 자동 새로고침하는 동적 import
-const ChartComponent = createDynamicComponentWithRetry(
+// 동적 import
+const ChartComponent = createDynamicComponent(
   () => import("@/lib/chartUtils"),
   {
     loading: () => (

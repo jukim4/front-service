@@ -18,24 +18,35 @@ export default function TotalBuyCoin() {
   const getTotalSummaryArrayFromTradeHistory = useAssetStore(state => state.getTotalSummaryArrayFromTradeHistory); // ✅ Zustand 메서드 접근
 
   const [summary, setSummary] = useState<[number, number, number, number, number]>([0, 0, 0, 0, 0]);
+  const [tradeData, setTradeData] = useState<any[]>([]);
+  const [assetAmount, setAssetAmount] = useState<number>(0);
 
+  // 데이터 페칭은 컴포넌트 마운트 시에만 실행
   useEffect(() => {
-  const fetchData = async () => {
-    try {
-      const [tradeData, assetRes] = await Promise.all([
-        apiClient.tradeHistory(),
-        apiClient.userHoldings(),
-      ]);
+    const fetchData = async () => {
+      try {
+        const [tradeDataResult, assetRes] = await Promise.all([
+          apiClient.tradeHistory(),
+          apiClient.userHoldings(),
+        ]);
 
-      const result = getTotalSummaryArrayFromTradeHistory(tradeData, tickers, assetRes.asset);
+        setTradeData(tradeDataResult);
+        setAssetAmount(assetRes.asset);
+      } catch (err) {
+        console.error("데이터 로드 실패:", err);
+      }
+    };
+
+    fetchData();
+  }, []); // 의존성 배열에서 tickers 제거
+
+  // tickers 변경 시 계산만 다시 실행
+  useEffect(() => {
+    if (tradeData.length > 0 && Object.keys(tickers).length > 0) {
+      const result = getTotalSummaryArrayFromTradeHistory(tradeData, tickers, assetAmount);
       setSummary(result as [number, number, number, number, number]);
-    } catch (err) {
-      console.error("데이터 로드 실패:", err);
     }
-  };
-
-  fetchData();
-}, [tickers]);
+  }, [tickers, tradeData, assetAmount, getTotalSummaryArrayFromTradeHistory]);
 
 
   const [totalBuy, totalValuation, totalAsset, profit, profitRate] = summary;

@@ -126,7 +126,7 @@ export default function HoldingCoinList() {
                   <tr key={asset.marketCode} className="border-b hover:bg-gray-50">
                     <td className="px-3 py-1 text-center text-gray-800">{asset.coinTicker}</td>
                     <td className="px-3 py-1 text-center text-gray-800">{asset.marketCode}</td>
-                    <td className="px-3 py-1 text-center text-gray-800">{asset.quantity.toFixed(6)}</td>
+                    <td className="px-3 py-1 text-center text-gray-800">{asset.quantity.toFixed(8)}</td>
                     <td className="px-3 py-1 text-center text-gray-800">{asset.avgBuyPrice.toLocaleString()} KRW</td>
                     <td className="px-3 py-1 text-center text-gray-800">{asset.currentPrice.toLocaleString()} KRW</td>
                     <td className="px-3 py-1 text-center text-gray-800">{asset.totalCost.toLocaleString()} KRW</td>

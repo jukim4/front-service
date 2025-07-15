@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import TotalBuyCoin from '@/components/TotalBuyCoin';
 import { useMarketStore } from '@/store/marketStore';
 import PortfolioCoin from '@/components/PortfolioCoin';
-import HoldingCointList from '@/components/HoldingCoinList';
+import HoldingCoinList from '@/components/HoldingCoinList';
 import MarketListCompoenet from '@/components/MarketListComponent';
 import { apiClient } from "@/lib/apiClient";
 
@@ -130,7 +130,7 @@ export default function Holdings() {
               </div>
             </div>
 
-            <HoldingCointList />
+            <HoldingCoinList />
           </div>
         )}
       </div>
