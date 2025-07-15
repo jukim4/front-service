@@ -18,6 +18,9 @@ export default function LoginForm({ onSwitch }: LoginFormProps) {
   const router = useRouter();
   const setUser = useAuthStore((state) => state.setUser);
 
+  const [ checkLogin, setCheckLogin ] = useState(false); // 로그인 실패 확인 변수
+  const [ loginInfo, setLoginInfo ] = useState<string | undefined>();
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -25,7 +28,6 @@ export default function LoginForm({ onSwitch }: LoginFormProps) {
     try {
       const result = await login(username, passwd);
       if (result.success) {
-        alert(result.message);
         router.push('/'); // 메인 페이지로 리다이렉트
 
         try {
@@ -35,7 +37,8 @@ export default function LoginForm({ onSwitch }: LoginFormProps) {
           console.error('API ERROR: ' + err.meesage);
         }
       } else {
-        alert(result.message);
+        setCheckLogin(true);
+        setLoginInfo(result.message);
       }
     } catch (err: any) {
       console.error('로그인 실패: ' + err.message);
@@ -72,6 +75,9 @@ export default function LoginForm({ onSwitch }: LoginFormProps) {
       >
         {isLoading ? '로그인 중...' : '로그인'}
       </button>
+      {checkLogin && 
+      <p className="text-sm text-center text-red-600">{loginInfo}</p>
+      }
       {onSwitch && (
         <p
           onClick={onSwitch}
