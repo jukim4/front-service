@@ -1,15 +1,12 @@
 'use client'
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 
 import CumulativeChart from "./CumulativeChart";
 import ProfitLossChart from "./ProfitLossChart";
 import ProfitLossWrapper from "./ProfitLossNum"; // 변경된 이름 사용
-import SearchBar from '@/components/SearchBar';
-import MarketSortBar from "@/components/MarketSortBar";
 import MarketListCompoenet from "./MarketListComponent";
 import { useRouter } from "next/navigation";
-import MarketTabs from "./MarketTabs";
 export default function ProfitLossPage() {
   const [activeTab, setActiveTab] = useState("투자손익");
   const tabs = ["보유자산", "투자손익"];

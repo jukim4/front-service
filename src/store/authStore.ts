@@ -1,4 +1,3 @@
-import { useAuth } from '@/hooks/useAuth';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 
 import { useAuth } from "@/hooks/useAuth";
 import { useAuthStore } from "@/store/authStore";
@@ -11,7 +10,6 @@ export default function Password() {
   const [currentPw, setCurrentPw] = useState("");
   const [newPw, setNewPw] = useState("");
   const [confirmPw, setConfirmPw] = useState("");
-  const router = useRouter();
   const { handleChangePasswd } = useAuth();
 
   // 임시 사용자 정보
