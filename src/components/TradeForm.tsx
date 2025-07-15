@@ -302,8 +302,8 @@ export default function TradeForm() {
             placeholder="가격을 입력하세요"
             inputMode="decimal"
             pattern="[0-9.]*"
-            disabled={!useAuthStore.getState().isAuthenticated || selectedPosition === '시장가'}
-            readOnly={!useAuthStore.getState().isAuthenticated || selectedPosition === '시장가'}
+            disabled={selectedPosition === '시장가'}
+            readOnly={selectedPosition === '시장가'}
           />
           <div className="flex border-t border-r border-b rounded-r">
             <button 
@@ -357,94 +357,190 @@ export default function TradeForm() {
 
       </div>
       
+      {/* 매수일 때: 주문총액 -> 퍼센트 버튼 -> 주문수량 */}
+      {/* 매도일 때: 주문수량 -> 퍼센트 버튼 -> 주문총액 */}
+      
+      {activeTab === '매수' ? (
+        <>
+          {/* Total */}
+          <div className="px-4 py-2">
+            <div className="flex items-center mb-1">
+              <span className="text-sm">주문총액 (KRW)</span>
+            </div>
+            <input type="text" value={totalPrice} className="w-full border rounded p-2 text-right"
+             onChange={e => {
+               let value = e.target.value.replace(/[^0-9.]/g, '');
+               const parts = value.split('.');
+               if (parts.length > 2) {
+                value = parts[0] + '.' + parts.slice(1).join('');
+               }
 
-      {/* Total */}
-      <div className="px-4 py-2">
-        <div className="flex items-center mb-1">
-          <span className="text-sm">주문총액 (KRW)</span>
-        </div>
-        <input type="text" value={totalPrice} className="w-full border rounded p-2 text-right"
-         onChange={e => {
-           let value = e.target.value.replace(/[^0-9.]/g, '');
-           const parts = value.split('.');
-           if (parts.length > 2) {
-            value = parts[0] + '.' + parts.slice(1).join('');
-           }
+               const num = value === '' ? '0' : value;
+               setTotalPrice(num);
+               setInputMode('total');
+               
+               // 실시간 주문수량 계산
+               const currentPrice = parseFloat(price.replace(/,/g, ''));
+               const totalAmount = parseFloat(num.replace(/,/g, ''));
+               if (!isNaN(currentPrice) && currentPrice > 0 && !isNaN(totalAmount) && totalAmount > 0) {
+                 setCoinCnt(totalAmount / currentPrice);
+               } else {
+                 setCoinCnt(0);
+               }
+             }}
+             inputMode="decimal"
+             pattern="[0-9.]*"
+             disabled={selectedPosition === '시장가'}
+             readOnly={selectedPosition === '시장가'} />
+          </div>
 
-           const num = value === '' ? '0' : value;
-           setTotalPrice(num);
-           setInputMode('total');
-           
-           // 실시간 주문수량 계산
-           const currentPrice = parseFloat(price.replace(/,/g, ''));
-           const totalAmount = parseFloat(num.replace(/,/g, ''));
-           if (!isNaN(currentPrice) && currentPrice > 0 && !isNaN(totalAmount) && totalAmount > 0) {
-             setCoinCnt(totalAmount / currentPrice);
-           } else {
-             setCoinCnt(0);
-           }
-         }}
-         inputMode="decimal"
-         pattern="[0-9.]*"
-         disabled={!useAuthStore.getState().isAuthenticated}
-         readOnly={!useAuthStore.getState().isAuthenticated} />
-      </div>
-
-      {/* Asset Ratio Selection */}
-      <div className="px-4 py-2">
-        <div className="grid grid-cols-5 gap-2">
-          {percentages.map((percent) => (
-            <button
-              key={percent}
-              className={`py-1 text-sm border rounded ${
-                selectedPercentage === percent ? "bg-gray-100 border-gray-400" : "border-gray-300"
-              }`}
-              onClick={() => {
-                setSelectedPercentage(percent);
-                
-                if (percent !== '직접입력') {
-                  const percentValue = parseFloat(percent) / 100;
-                  let calculatedAmount = 0;
-                  
-                  if (activeTab === '매수') {
-                    // 매수: 보유자산 기준
-                    const holdingsAmount = parseFloat(holdings_coin.replace(/,/g, '') || '0');
-                    calculatedAmount = holdingsAmount * percentValue;
-                  } else {
-                    // 매도: 보유코인 기준
-                    const coinAmount = currentPortpolio.total_cost;
-                    calculatedAmount = coinAmount * percentValue;
-                  }
-                  
-                  if (calculatedAmount > 0) {
-                    setTotalPrice(new Intl.NumberFormat('ko-KR').format(Math.floor(calculatedAmount)));
+          {/* Asset Ratio Selection */}
+          <div className="px-4 py-2">
+            <div className="grid grid-cols-5 gap-2">
+              {percentages.map((percent) => (
+                <button
+                  key={percent}
+                  className={`py-1 text-sm border rounded ${
+                    selectedPercentage === percent ? "bg-gray-100 border-gray-400" : "border-gray-300"
+                  }`}
+                  onClick={() => {
+                    setSelectedPercentage(percent);
                     
-                    // 실시간 주문수량 계산
-                    const currentPrice = parseFloat(price.replace(/,/g, ''));
-                    if (!isNaN(currentPrice) && currentPrice > 0) {
-                      setCoinCnt(calculatedAmount / currentPrice);
-                    } else {
-                      setCoinCnt(0);
+                    if (percent !== '직접입력') {
+                      const percentValue = parseFloat(percent) / 100;
+                      // 매수: 보유자산 기준으로 총액 계산
+                      const holdingsAmount = parseFloat(holdings_coin.replace(/,/g, '') || '0');
+                      const calculatedAmount = holdingsAmount * percentValue;
+                      setTotalPrice(new Intl.NumberFormat('ko-KR').format(Math.floor(calculatedAmount)));
+                      
+                      // 실시간 주문수량 계산
+                      const currentPrice = parseFloat(price.replace(/,/g, ''));
+                      if (!isNaN(currentPrice) && currentPrice > 0) {
+                        setCoinCnt(calculatedAmount / currentPrice);
+                      } else {
+                        setCoinCnt(0);
+                      }
                     }
-                  }
+                  }}
+                >
+                  {percent}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Quantity */}
+          <div className="px-4 py-2">
+            <div className="flex items-center mb-1">
+              <span className="text-sm">주문수량</span>
+            </div>
+            <div className="w-full border rounded p-2 text-right bg-gray-50">
+              {coinCnt > 0 ? new Intl.NumberFormat('ko-KR', { maximumFractionDigits: 8 }).format(coinCnt) : '0'} {selectedMarket.split('-')[1]}
+            </div>
+          </div>
+        </>
+      ) : (
+        <>
+          {/* Quantity */}
+          <div className="px-4 py-2">
+            <div className="flex items-center mb-1">
+              <span className="text-sm">주문수량</span>
+            </div>
+            <input
+              type="text"
+              value={coinCnt > 0 ? coinCnt.toString() : ''}
+              onChange={(e) => {
+                const value = e.target.value.replace(/[^0-9.]/g, '');
+                const numValue = value === '' ? 0 : parseFloat(value);
+                setCoinCnt(numValue);
+                
+                // 실시간 주문총액 계산
+                const currentPrice = parseFloat(price.replace(/,/g, ''));
+                if (!isNaN(currentPrice) && currentPrice > 0 && numValue > 0) {
+                  const totalAmount = numValue * currentPrice;
+                  setTotalPrice(new Intl.NumberFormat('ko-KR').format(Math.floor(totalAmount)));
+                } else {
+                  setTotalPrice('0');
                 }
               }}
-            >
-              {percent}
-            </button>
-          ))}
-        </div>
-      </div>
+              className="w-full border rounded p-2 text-right"
+              placeholder="수량을 입력하세요"
+              inputMode="decimal"
+              pattern="[0-9.]*"
+              disabled={!useAuthStore.getState().isAuthenticated}
+              readOnly={!useAuthStore.getState().isAuthenticated}
+            />
+          </div>
 
-      {/* Quantity */}
-      <div className="px-4 py-2">
-        <div className="flex items-center mb-1">
-          <span className="text-sm">주문수량</span>
-        </div>
-        <div className="w-full border rounded p-2 text-right bg-gray-50">
-          {coinCnt > 0 ? new Intl.NumberFormat('ko-KR', { maximumFractionDigits: 8 }).format(coinCnt) : '0'} {selectedMarket.split('-')[1]}
-        </div>
-      </div>
+          {/* Asset Ratio Selection */}
+          <div className="px-4 py-2">
+            <div className="grid grid-cols-5 gap-2">
+              {percentages.map((percent) => (
+                <button
+                  key={percent}
+                  className={`py-1 text-sm border rounded ${
+                    selectedPercentage === percent ? "bg-gray-100 border-gray-400" : "border-gray-300"
+                  }`}
+                  onClick={() => {
+                    setSelectedPercentage(percent);
+                    
+                    if (percent !== '직접입력') {
+                      const percentValue = parseFloat(percent) / 100;
+                      // 매도: 보유수량 기준으로 수량 계산
+                      const coinQuantity = currentPortpolio.quantity;
+                      const calculatedQuantity = coinQuantity * percentValue;
+                      setCoinCnt(calculatedQuantity);
+                      
+                      // 실시간 주문총액 계산
+                      const currentPrice = parseFloat(price.replace(/,/g, ''));
+                      if (!isNaN(currentPrice) && currentPrice > 0) {
+                        const totalAmount = calculatedQuantity * currentPrice;
+                        setTotalPrice(new Intl.NumberFormat('ko-KR').format(Math.floor(totalAmount)));
+                      } else {
+                        setTotalPrice('0');
+                      }
+                    }
+                  }}
+                >
+                  {percent}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Total */}
+          <div className="px-4 py-2">
+            <div className="flex items-center mb-1">
+              <span className="text-sm">주문총액 (KRW)</span>
+            </div>
+            <input type="text" value={totalPrice} className="w-full border rounded p-2 text-right bg-gray-50"
+             onChange={e => {
+               let value = e.target.value.replace(/[^0-9.]/g, '');
+               const parts = value.split('.');
+               if (parts.length > 2) {
+                value = parts[0] + '.' + parts.slice(1).join('');
+               }
+
+               const num = value === '' ? '0' : value;
+               setTotalPrice(num);
+               setInputMode('total');
+               
+               // 실시간 주문수량 계산
+               const currentPrice = parseFloat(price.replace(/,/g, ''));
+               const totalAmount = parseFloat(num.replace(/,/g, ''));
+               if (!isNaN(currentPrice) && currentPrice > 0 && !isNaN(totalAmount) && totalAmount > 0) {
+                 setCoinCnt(totalAmount / currentPrice);
+               } else {
+                 setCoinCnt(0);
+               }
+             }}
+             inputMode="decimal"
+             pattern="[0-9.]*"
+             disabled={!useAuthStore.getState().isAuthenticated}
+             readOnly={!useAuthStore.getState().isAuthenticated} />
+          </div>
+        </>
+      )}
 
       {/* Fee Info */}
       <div className="px-4 py-2 text-xs text-gray-500 text-center">
