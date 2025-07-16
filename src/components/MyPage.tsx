@@ -1,8 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import Image from 'next/image';
-import axios from 'axios';
 import Link from 'next/link';
 
 import { useAuthStore } from '@/store/authStore';
@@ -23,20 +21,6 @@ export default function MyPage() {
 
                 {/* 오른쪽 */}
                 <div className="w-full space-y-6">
-
-                    <div className="flex justify-end gap-x-2">
-                        <button
-                            onClick={openBankruptcyModal}
-                            className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 text-sm"
-                        >
-                            파산 신청
-                        </button>
-                        <button
-                            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 text-sm"
-                        >
-                            확인
-                        </button>
-                    </div>
 
                     <div className="space-y-4">
                         <h2 className="text-lg font-semibold">기본 정보</h2>
@@ -62,29 +46,25 @@ export default function MyPage() {
                         </div>
                     </div>
 
-                    <div className="space-y-2">
-                        <h2 className="text-lg font-semibold">언어 설정</h2>
-                        <div className="relative">
-                            <select className="appearance-none w-full border border-gray-300 px-3 py-2 rounded text-sm bg-white pr-10 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400">
-                                <option className="text-sm">한국어</option>
-                                <option className="text-sm">English</option>
-                            </select>
-                            <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-gray-400 text-xs">
-                                🔽
-                            </div>
-                        </div>
-                        <button className="text-sm text-blue-700 underline mt-3 pt-4">
-                        <Link href="/password">
-                        비밀번호변경
-                        </Link>
-                    </button>
-                    </div>
-
-
-                    <div className="pt-6 border-t">
-                        <h2 className="text-lg font-semibold mb-3">회원 탈퇴</h2>
+                    <div className="flex justify-end gap-x-2">
                         <button className="px-4 py-2 border border-red-500 text-red-600 rounded hover:bg-red-100 text-sm">
-                            회원탈퇴
+                            회원 탈퇴
+                        </button>
+                        <button className="px-4 py-2 border border-blue-500 text-blue-600 rounded hover:bg-blue-100 text-sm">
+                            <Link href="/password">
+                                비밀번호 변경
+                            </Link>
+                        </button>
+                        <button
+                            onClick={openBankruptcyModal}
+                            className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 text-sm"
+                        >
+                            파산 신청
+                        </button>
+                        <button
+                            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 text-sm"
+                        >
+                            변경사항 저장
                         </button>
                     </div>
                 </div>

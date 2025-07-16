@@ -180,6 +180,7 @@ export default function WaitOrders() {
                             <td className="text-center text-gray-500 text-xs py-3">{pendingorder.orderPrice.toLocaleString()}</td>
                             <td className="text-center text-gray-500 text-xs py-3">{Math.floor(pendingorder.orderPrice * pendingorder.totalQuantity).toLocaleString()}</td>
                             <td className="text-center text-gray-500 text-xs py-3">{pendingorder.totalQuantity}</td>
+                            {/* 미체결량 API 개선되면 반영 필요 */}
                             <td className="text-center text-gray-500 text-xs py-3">{pendingorder.totalQuantity}</td>
                           </tr>
                         ))
