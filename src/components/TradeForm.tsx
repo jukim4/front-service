@@ -390,8 +390,7 @@ export default function TradeForm() {
              }}
              inputMode="decimal"
              pattern="[0-9.]*"
-             disabled={selectedPosition === '시장가'}
-             readOnly={selectedPosition === '시장가'} />
+             />
           </div>
 
           {/* Asset Ratio Selection */}
