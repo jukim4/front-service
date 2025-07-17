@@ -22,6 +22,7 @@ export default function TradeForm() {
   const [selectedPercentage, setSelectedPercentage] = useState("0%");
   const [ totalPrice, setTotalPrice ] = useState('0');
   const [ coinCnt, setCoinCnt ] = useState(0);
+  const [ coinCntInput, setCoinCntInput ] = useState(''); // 입력 중인 텍스트 상태
   const [ holdings_coin, setHoldingsCoin] = useState('');
   const [ currentPortpolio, setcurrentPortpolio ] = useState({name: selectedMarket, quantity: 0, average_cost: 0, total_cost: 0});
 
@@ -43,6 +44,7 @@ export default function TradeForm() {
     const value = isNaN(Number(currentPrice)) || currentPrice == null ? 0 : Number(currentPrice);
     setPrice(new Intl.NumberFormat('ko-KR').format(value));
     setCoinCnt(0);
+    setCoinCntInput(''); // 입력 텍스트도 초기화
     setTotalPrice('0');
 
     getPortfolio();
@@ -135,14 +137,27 @@ export default function TradeForm() {
 
     if (Number(totalPrice.replace(/,/g, '')) === 0) return;
 
-    // 최소 결제 금액
-    if ( (activeTab === '매도' && selectedPosition === '시장가' && Number(totalPrice.replace(/,/g, '')) > currentPortpolio.quantity)) {
+    // 최소 주문 금액 체크 (5000원)
+    const totalAmount = Number(totalPrice.replace(/,/g, ''));
+    if (totalAmount < 5000) {
+      alert('최소 주문 금액은 5,000 KRW 입니다.');
+      return;
+    }
 
-      if (( Number(totalPrice.replace(/,/g, '')) < 5000 
-    || activeTab==='매도' && selectedPosition !== '시장가' && Number(totalPrice.replace(/,/g, '')) > currentPortpolio.total_cost)) {
+    // 매도시 보유 수량/금액 체크
+    if (activeTab === '매도') {
+      if (selectedPosition === '시장가' && coinCnt > currentPortpolio.quantity) {
+        alert('보유 수량을 초과하여 매도할 수 없습니다.');
         return;
       }
-      return;
+    }
+
+    // 매수시 보유 수량/금액 체크
+    if (activeTab === '매수') {
+      if (selectedPosition === '지정가' && totalAmount > currentPortpolio.total_cost) {
+        alert('보유 금액을 초과하여 매수할 수 없습니다.');
+        return;
+      }
     }
 
     const coin_ticker = selectedMarket.split('-')[1]
@@ -196,6 +211,7 @@ export default function TradeForm() {
 
     setTotalPrice('0');
     setCoinCnt(0);
+    setCoinCntInput(''); // 입력 텍스트도 초기화
     setInputMode('total');
 
     getPortfolio();
@@ -206,6 +222,7 @@ export default function TradeForm() {
   const currentPrice = tickers[selectedMarket]?.trade_price;
   setTotalPrice('0');
   setCoinCnt(0);
+  setCoinCntInput(''); // 입력 텍스트도 초기화
   setPrice(new Intl.NumberFormat('ko-KR').format(Number(currentPrice)));
  }
 
@@ -447,10 +464,33 @@ export default function TradeForm() {
             </div>
             <input
               type="text"
-              value={coinCnt > 0 ? coinCnt.toString() : ''}
+              value={coinCntInput}
               onChange={(e) => {
-                const value = e.target.value.replace(/[^0-9.]/g, '');
-                const numValue = value === '' ? 0 : parseFloat(value);
+                let value = e.target.value.replace(/[^0-9.]/g, '');
+                
+                // 소수점 처리: 소수점이 두 개 이상 있으면 첫 번째만 유지
+                const parts = value.split('.');
+                if (parts.length > 2) {
+                  value = parts[0] + '.' + parts.slice(1).join('');
+                }
+                
+                // 입력 텍스트 상태 업데이트
+                setCoinCntInput(value);
+                
+                // 빈 문자열이거나 소수점만 있는 경우 처리
+                if (value === '' || value === '.') {
+                  setCoinCnt(0);
+                  setTotalPrice('0');
+                  return;
+                }
+                
+                const numValue = parseFloat(value);
+                if (isNaN(numValue)) {
+                  setCoinCnt(0);
+                  setTotalPrice('0');
+                  return;
+                }
+                
                 setCoinCnt(numValue);
                 
                 // 실시간 주문총액 계산
@@ -489,6 +529,7 @@ export default function TradeForm() {
                       const coinQuantity = currentPortpolio.quantity;
                       const calculatedQuantity = coinQuantity * percentValue;
                       setCoinCnt(calculatedQuantity);
+                      setCoinCntInput(calculatedQuantity.toString()); // 입력 텍스트도 업데이트
                       
                       // 실시간 주문총액 계산
                       const currentPrice = parseFloat(price.replace(/,/g, ''));
