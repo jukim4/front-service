@@ -4,26 +4,14 @@ import { useState, useEffect } from 'react';
 import { useRouter } from "next/navigation";
 import TotalBuyCoin from '@/components/TotalBuyCoin';
 import { useMarketStore } from '@/store/marketStore';
+import { useAssetStore } from '@/store/assetStore';
 import PortfolioCoin from '@/components/PortfolioCoin';
 import HoldingCoinList from '@/components/HoldingCoinList';
 import MarketListCompoenet from '@/components/MarketListComponent';
-import { apiClient } from "@/lib/apiClient";
 
 export type DoughnutData = {
   label: string;
   data: number;
-};
-
-type TickerData = {
-  trade_price: number;
-};
-
-type TradeHistory = {
-  concludedAt: string;
-  marketCode: string;   // ex: "BTC", "ETH" 등
-  orderPosition: "BUY" | "SELL";
-  tradePrice: number;
-  tradeQuantity: number;
 };
 
 export default function Holdings() {
@@ -31,12 +19,10 @@ export default function Holdings() {
   const [activeTab, setActiveTab] = useState("보유자산");
 
   const { tickers } = useMarketStore();
+  const { assets, fetchPortfolio, getDoughnutData } = useAssetStore();
 
   const [doughnutData, setDoughnutData] = useState<DoughnutData[]>([]);
   const [loading, setLoading] = useState(false);
-
-  // 체결 데이터는 최초 한번만 fetch
-  const [trades, setTrades] = useState<TradeHistory[]>([]);
 
   const tabs = ["보유자산", "투자손익"];
 
@@ -45,57 +31,29 @@ export default function Holdings() {
     router.push(tab === "보유자산" ? '/portfolio/holdings' : '/portfolio/profit-loss');
   };
 
-  const calculateHoldingsFromTrades = (trades: TradeHistory[]) => {
-    const holdingsMap: Record<string, number> = {};
-
-    trades.forEach(({ marketCode, orderPosition, tradeQuantity }) => {
-      if (!holdingsMap[marketCode]) holdingsMap[marketCode] = 0;
-      holdingsMap[marketCode] += orderPosition === "BUY" ? tradeQuantity : -tradeQuantity;
-    });
-
-    return holdingsMap;
-  };
-
-  const calculateDoughnutData = (
-    holdings: Record<string, number>, 
-    tickers: Record<string, TickerData>
-  ): DoughnutData[] => {
-    return Object.entries(holdings)
-      .map(([symbol, qty]) => {
-        const price = tickers[symbol]?.trade_price ?? 0;
-        return {
-          label: symbol,
-          data: +(price * qty).toFixed(2),
-        };
-      })
-      .filter(item => item.data > 0);
-  };
-
-  // 최초 마운트시 체결 데이터 fetch
+  // 컴포넌트 마운트 시 portfolio 데이터 가져오기
   useEffect(() => {
-    const fetchTrades = async () => {
+    const fetchData = async () => {
       setLoading(true);
       try {
-        const res = await apiClient.tradeHistory();
-        setTrades(res);
+        await fetchPortfolio();
       } catch (error) {
-        console.error("체결 데이터 불러오기 실패:", error);
+        console.error("포트폴리오 데이터 불러오기 실패:", error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchTrades();
-  }, []);
+    fetchData();
+  }, [fetchPortfolio]);
 
-  // tickers 혹은 trades 변경 시 도넛 데이터 재계산
+  // assets 혹은 tickers 변경 시 도넛 데이터 재계산
   useEffect(() => {
-    if (trades.length === 0) return;
-
-    const holdings = calculateHoldingsFromTrades(trades);
-    const doughnut = calculateDoughnutData(holdings, tickers);
-    setDoughnutData(doughnut);
-  }, [tickers, trades]);
+    if (assets.length > 0 && Object.keys(tickers).length > 0) {
+      const doughnut = getDoughnutData(assets, tickers);
+      setDoughnutData(doughnut);
+    }
+  }, [assets, tickers, getDoughnutData]);
 
   return (
     <main className="grid grid-cols-3 gap-2 min-h-screen p-4 md:p-8 bg-gray-50">
