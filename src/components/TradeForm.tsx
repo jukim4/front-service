@@ -144,32 +144,32 @@ export default function TradeForm() {
       return;
     }
 
-    // 매도시 보유 수량/금액 체크
+    const coin_ticker = selectedMarket.split('-')[1]
+    const orderPrice = parseFloat(price.replace(/,/g, ''));
+    const orderType = tab === '매수' ? 'buy' : 'sell';
+    const userHoldings = parseFloat(holdings_coin.replace(/,/g, '')) || 0;
+
+    // 매수 시 보유 현금 체크
+    if (activeTab === '매수') {
+      if (totalAmount > userHoldings) {
+        alert('보유 현금을 초과하여 매수할 수 없습니다.');
+        return;
+      }
+    }
+
+    // 매도 시 보유 수량 체크
     if (activeTab === '매도') {
-      if (selectedPosition === '시장가' && coinCnt > currentPortpolio.quantity) {
+      if (coinCnt > currentPortpolio.quantity) {
         alert('보유 수량을 초과하여 매도할 수 없습니다.');
         return;
       }
     }
 
-    // 매수시 보유 수량/금액 체크
-    if (activeTab === '매수') {
-      if (selectedPosition === '지정가' && totalAmount > currentPortpolio.total_cost) {
-        alert('보유 금액을 초과하여 매수할 수 없습니다.');
-        return;
-      }
-    }
-
-    const coin_ticker = selectedMarket.split('-')[1]
-    const total = parseFloat(totalPrice.replace(/,/g, ''));
-    const orderPrice = parseFloat(price.replace(/,/g, ''));
-    const orderType = tab === '매수' ? 'buy' : 'sell';
-
-    
     if (selectedPosition === '시장가') {
       if (activeTab === '매수') {
+        // 매수 시 주문금액(KRW) 사용
         try {
-          const result = await apiClient.orderMarket(coin_ticker, 'buy', total, selectedMarket);
+          const result = await apiClient.orderMarket(coin_ticker, 'buy', totalAmount, selectedMarket);
             
           if(result.success) {
             alert(result.message)
@@ -181,8 +181,9 @@ export default function TradeForm() {
           console.error("error", err);
         } 
       } else if(activeTab === '매도') {
+        // 매도 시 주문수량 사용
         try {
-          const result = await apiClient.orderMarket(coin_ticker, 'sell', total, selectedMarket);
+          const result = await apiClient.orderMarket(coin_ticker, 'sell', coinCnt, selectedMarket);
             
           if(result.success) {
             alert(result.message)
@@ -196,13 +197,26 @@ export default function TradeForm() {
       }
     } else if(selectedPosition === '지정가') {
         try {
-          const result = await apiClient.orderLimit(selectedMarket, coin_ticker, orderPrice, orderType, coinCnt, total)
-
-          if (result.success) {
-            alert(result.message);
-            fetchAsset();
+          if (activeTab === '매수') {
+            // 매수 시 주문금액(KRW) 사용
+            const result = await apiClient.orderLimit(selectedMarket, coin_ticker, orderPrice, orderType, coinCnt, totalAmount);
+            
+            if (result.success) {
+              alert(result.message);
+              fetchAsset();
+            } else {
+              alert(result.message);
+            }
           } else {
-            alert(result.message);
+            // 매도 시 주문수량 사용
+            const result = await apiClient.orderLimit(selectedMarket, coin_ticker, orderPrice, orderType, coinCnt, coinCnt);
+            
+            if (result.success) {
+              alert(result.message);
+              fetchAsset();
+            } else {
+              alert(result.message);
+            }
           }
         } catch(err) {
           console.error("error", err);
