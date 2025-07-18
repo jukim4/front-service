@@ -19,10 +19,10 @@ export default function Holdings() {
   const [activeTab, setActiveTab] = useState("보유자산");
 
   const { tickers } = useMarketStore();
-  const { assets, fetchPortfolio, getDoughnutData } = useAssetStore();
+  const { assets, fetchPortfolio, getDoughnutData, isLoading } = useAssetStore();
 
   const [doughnutData, setDoughnutData] = useState<DoughnutData[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const tabs = ["보유자산", "투자손익"];
 
@@ -31,16 +31,15 @@ export default function Holdings() {
     router.push(tab === "보유자산" ? '/portfolio/holdings' : '/portfolio/profit-loss');
   };
 
-  // 컴포넌트 마운트 시 portfolio 데이터 가져오기
+  // 컴포넌트 마운트 시 portfolio 데이터 가져오기 (한 번만)
   useEffect(() => {
     const fetchData = async () => {
-      setLoading(true);
+      setError(null);
       try {
         await fetchPortfolio();
-      } catch (error) {
-        console.error("포트폴리오 데이터 불러오기 실패:", error);
-      } finally {
-        setLoading(false);
+      } catch (err: any) {
+        console.error("포트폴리오 데이터 불러오기 실패:", err);
+        setError(err.message || "데이터를 불러오는데 실패했습니다");
       }
     };
 
@@ -54,6 +53,36 @@ export default function Holdings() {
       setDoughnutData(doughnut);
     }
   }, [assets, tickers, getDoughnutData]);
+
+  if (isLoading) {
+    return (
+      <main className="grid grid-cols-3 gap-2 min-h-screen p-4 md:p-8 bg-gray-50">
+        <div className="col-span-2 border rounded-md overflow-hidden bg-white">
+          <div className="flex justify-center items-center h-40">
+            <div className="animate-spin rounded-full h-8 w-8 border-4 border-red-500 border-t-transparent" />
+          </div>
+        </div>
+        <div className="relative col-span-1">
+          <MarketListCompoenet />
+        </div>
+      </main>
+    );
+  }
+
+  if (error) {
+    return (
+      <main className="grid grid-cols-3 gap-2 min-h-screen p-4 md:p-8 bg-gray-50">
+        <div className="col-span-2 border rounded-md overflow-hidden bg-white">
+          <div className="text-center text-red-500 py-4">
+            {error}
+          </div>
+        </div>
+        <div className="relative col-span-1">
+          <MarketListCompoenet />
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="grid grid-cols-3 gap-2 min-h-screen p-4 md:p-8 bg-gray-50">

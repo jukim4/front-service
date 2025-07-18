@@ -7,14 +7,9 @@ import { formatNumber, safeNumber } from "@/lib/numberUtils";
 
 export default function TotalBuyCoin() {
   const { tickers } = useMarketStore();
-  const { assets, holdings, fetchPortfolio, getTotalSummaryFromPortfolio } = useAssetStore();
+  const { assets, holdings, getTotalSummaryFromPortfolio } = useAssetStore();
 
   const [summary, setSummary] = useState<[number, number, number, number, number]>([0, 0, 0, 0, 0]);
-
-  // 컴포넌트 마운트 시 portfolio 데이터 가져오기
-  useEffect(() => {
-    fetchPortfolio();
-  }, [fetchPortfolio]);
 
   // assets, holdings, tickers 변경 시 계산 다시 실행
   useEffect(() => {

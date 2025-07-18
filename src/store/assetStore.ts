@@ -28,6 +28,7 @@ type TradeHistory = {
 interface AssetState {
   assets: PortfolioItem[];
   holdings: number;
+  isLoading: boolean;
 
   fetchPortfolio: (market_code?: string) => Promise<void>;
   getCurrentPrice: (market: string, tickers: Record<string, any>) => number;
@@ -91,10 +92,19 @@ const getUserPortfolio = async (market_code?: string) => {
 export const useAssetStore = create<AssetState>((set, get) => ({
   assets: [],
   holdings: 0,
+  isLoading: false,
 
   fetchPortfolio: async (market_code?: string) => {
-    const { portfolio, holdings } = await getUserPortfolio(market_code);
-    set({ assets: portfolio, holdings });
+    const { isLoading } = get();
+    if (isLoading) return; // 이미 로딩 중이면 중복 호출 방지
+
+    try {
+      set({ isLoading: true });
+      const { portfolio, holdings } = await getUserPortfolio(market_code);
+      set({ assets: portfolio, holdings });
+    } finally {
+      set({ isLoading: false });
+    }
   },
 
   getCurrentPrice: (market: string, tickers: Record<string, any>) => {

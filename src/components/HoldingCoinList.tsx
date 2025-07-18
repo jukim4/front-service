@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useMemo } from "react";
 import { useMarketStore } from "@/store/marketStore";
 import { useAssetStore } from "@/store/assetStore";
 import { Card, CardContent } from "@/components/ui/card";
@@ -9,30 +9,11 @@ import { safeNumber } from "@/lib/numberUtils";
 
 export default function HoldingCoinList() {
   const { tickers } = useMarketStore();
-  const { assets, fetchPortfolio } = useAssetStore();
-  const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+  const { assets } = useAssetStore();
 
   const tableHeaders = [
     "코인종류", "보유수량", "매수단가", "현재단가", "총매수금액", "총평가손익", "총평가수익률"
   ];
-
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        await fetchPortfolio();
-      } catch (err: any) {
-        console.error("Failed to fetch portfolio:", err);
-        setError(err.message || "Unknown error");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [fetchPortfolio]);
 
   const holdingAssets = useMemo(() => {
     return assets
@@ -55,22 +36,6 @@ export default function HoldingCoinList() {
         };
       });
   }, [assets, tickers]);
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-40">
-        <div className="animate-spin rounded-full h-8 w-8 border-4 border-red-500 border-t-transparent" />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="text-center text-red-500 py-4">
-        오류 발생: {error}
-      </div>
-    );
-  }
 
   return (
     <div className="w-full">
