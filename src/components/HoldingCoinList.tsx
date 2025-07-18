@@ -2,24 +2,19 @@
 
 import React, { useEffect, useState, useMemo } from "react";
 import { useMarketStore } from "@/store/marketStore";
+import { useAssetStore } from "@/store/assetStore";
 import { Card, CardContent } from "@/components/ui/card";
-import { apiClient } from "@/lib/apiClient";
-
-type TradeHistory = {
-  marketCode: string;
-  orderPosition: "BUY" | "SELL";
-  tradeQuantity: number;
-  tradePrice: number;
-};
+import { formatNumber } from "@/lib/numberUtils";
+import { safeNumber } from "@/lib/numberUtils";
 
 export default function HoldingCoinList() {
   const { tickers } = useMarketStore();
-  const [periodTrade, setPeriodTrade] = useState<TradeHistory[]>([]);
+  const { assets, fetchPortfolio } = useAssetStore();
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
   const tableHeaders = [
-    "코인", "마켓", "보유수량", "매수단가", "현재단가", "총매수금액", "수익률"
+    "코인종류", "보유수량", "매수단가", "현재단가", "총매수금액", "총평가손익", "총평가수익률"
   ];
 
   useEffect(() => {
@@ -27,11 +22,9 @@ export default function HoldingCoinList() {
       setLoading(true);
       setError(null);
       try {
-        const data = await apiClient.tradeHistory();
-        console.log("Trade history data:", data);
-        setPeriodTrade(data);
+        await fetchPortfolio();
       } catch (err: any) {
-        console.error("Failed to fetch trade history:", err);
+        console.error("Failed to fetch portfolio:", err);
         setError(err.message || "Unknown error");
       } finally {
         setLoading(false);
@@ -39,47 +32,29 @@ export default function HoldingCoinList() {
     };
 
     fetchData();
-  }, []);
+  }, [fetchPortfolio]);
 
   const holdingAssets = useMemo(() => {
-    const map = new Map<string, { quantity: number; totalCost: number }>();
-
-    periodTrade.forEach(trade => {
-      const { marketCode, orderPosition, tradeQuantity, tradePrice } = trade;
-      const entry = map.get(marketCode) || { quantity: 0, totalCost: 0 };
-
-      if (orderPosition === "BUY") {
-        entry.quantity += tradeQuantity;
-        entry.totalCost += tradeQuantity * tradePrice;
-      } else if (orderPosition === "SELL") {
-        const avgBuyPrice = entry.quantity > 0 ? entry.totalCost / entry.quantity : 0;
-        entry.quantity -= tradeQuantity;
-        entry.totalCost -= tradeQuantity * avgBuyPrice;
-      }
-
-      map.set(marketCode, entry);
-    });
-
-    return Array.from(map.entries())
-      .filter(([_, val]) => val.quantity > 0)
-      .map(([marketCode, { quantity, totalCost }]) => {
-        const currentPrice = tickers[marketCode]?.trade_price || 0;
-        const coinTicker = marketCode.split("-")[1];
-        const avgBuyPrice = totalCost / quantity;
-        const valuation = quantity * currentPrice;
-        const profitRate = totalCost === 0 ? 0 : ((valuation - totalCost) / totalCost) * 100;
+    return assets
+      .filter(asset => asset.quantity > 0)
+      .map(asset => {
+        const currentPrice = tickers[asset.market_code]?.trade_price || 0;
+        const coinTicker = asset.coin_ticker;
+        const avgBuyPrice = asset.total_price / asset.quantity; // 평단가 = 총 매수 금액 / 보유 수량
+        const valuation = asset.quantity * currentPrice;
+        const profitRate = asset.total_price === 0 ? 0 : ((valuation - asset.total_price) / asset.total_price) * 100;
 
         return {
-          marketCode,
           coinTicker,
-          quantity,
+          quantity: asset.quantity,
           avgBuyPrice,
           currentPrice,
-          totalCost,
+          totalCost: asset.total_price,
+          profit: valuation - asset.total_price,
           profitRate,
         };
       });
-  }, [periodTrade, tickers]);
+  }, [assets, tickers]);
 
   if (loading) {
     return (
@@ -123,14 +98,14 @@ export default function HoldingCoinList() {
                 </tr>
               ) : (
                 holdingAssets.map((asset) => (
-                  <tr key={asset.marketCode} className="border-b hover:bg-gray-50">
+                  <tr key={asset.coinTicker} className="border-b hover:bg-gray-50">
                     <td className="px-3 py-1 text-center text-gray-800">{asset.coinTicker}</td>
-                    <td className="px-3 py-1 text-center text-gray-800">{asset.marketCode}</td>
-                    <td className="px-3 py-1 text-center text-gray-800">{asset.quantity.toFixed(8)}</td>
-                    <td className="px-3 py-1 text-center text-gray-800">{asset.avgBuyPrice.toLocaleString()} KRW</td>
-                    <td className="px-3 py-1 text-center text-gray-800">{asset.currentPrice.toLocaleString()} KRW</td>
-                    <td className="px-3 py-1 text-center text-gray-800">{asset.totalCost.toLocaleString()} KRW</td>
-                    <td className="px-3 py-1 text-center text-gray-800">{asset.profitRate.toFixed(2)}%</td>
+                    <td className="px-3 py-1 text-center text-gray-800">{formatNumber(safeNumber(asset.quantity), 8)}</td>
+                    <td className="px-3 py-1 text-center text-gray-800">{formatNumber(safeNumber(asset.avgBuyPrice))} KRW</td>
+                    <td className="px-3 py-1 text-center text-gray-800">{formatNumber(safeNumber(asset.currentPrice))} KRW</td>
+                    <td className="px-3 py-1 text-center text-gray-800">{formatNumber(safeNumber(asset.totalCost))} KRW</td>
+                    <td className="px-3 py-1 text-center text-gray-800">{formatNumber(safeNumber(asset.profit))} KRW</td>
+                    <td className="px-3 py-1 text-center text-gray-800">{formatNumber(safeNumber(asset.profitRate), 2)}%</td>
                   </tr>
                 ))
               )}

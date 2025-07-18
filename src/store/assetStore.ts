@@ -9,6 +9,14 @@ export type PortfolioItem = {
   quantity: number;
 };
 
+// PortfolioDto 구조에 맞는 타입
+export type PortfolioDto = {
+  name: string;           // 종목명 (예: "BTC")
+  quantity: number;       // 구매 수량
+  average_cost: number;   // 평단가
+  total_cost: number;     // 총 구매 가격
+};
+
 type TradeHistory = {
   marketCode: string;
   orderPosition: 'BUY' | 'SELL';
@@ -49,24 +57,35 @@ interface AssetState {
     cumulativeProfitLossRate: number;
     averageInvestment: number;
   };
+
+  // Portfolio 기반 총 요약 계산 메서드
+  getTotalSummaryFromPortfolio: (
+    assets: PortfolioItem[],
+    tickers: Record<string, any>,
+    holdings: number
+  ) => [number, number, number, number, number];
 }
 
 const getUserPortfolio = async (market_code?: string) => {
-  const portfolio: PortfolioItem[] = await apiClient.userPorfolio(market_code);
+  const portfolioResponse: PortfolioDto[] = await apiClient.userPorfolio(market_code);
   const holdingsResponse = await apiClient.userHoldings();
 
   const coins = Array.isArray(holdingsResponse?.coins) ? holdingsResponse.coins : [];
   const totalAsset = holdingsResponse?.asset ?? 0;
 
-  const enrichedPortfolio = portfolio.map(item => {
-    const coin = coins.find((c: { coin_ticker: string; quantity: number }) => c.coin_ticker === item.coin_ticker);
+  // PortfolioDto를 PortfolioItem으로 매핑
+  const portfolio: PortfolioItem[] = portfolioResponse.map(item => {
+    const coin = coins.find((c: { coin_ticker: string; quantity: number }) => c.coin_ticker === item.name);
     return {
-      ...item,
-      quantity: coin?.quantity ?? 0
+      market_code: item.name,      // name을 market_code로 매핑
+      position: 0,                 // portfolio 데이터는 모두 보유 자산이므로 0으로 설정
+      total_price: item.total_cost, // total_cost를 total_price로 매핑
+      coin_ticker: item.name,      // name을 coin_ticker로 매핑
+      quantity: coin?.quantity ?? item.quantity // coins에서 실제 보유량 가져오기, 없으면 portfolio의 quantity 사용
     };
   });
 
-  return { portfolio: enrichedPortfolio, holdings: totalAsset };
+  return { portfolio, holdings: totalAsset };
 };
 
 export const useAssetStore = create<AssetState>((set, get) => ({
@@ -87,25 +106,22 @@ export const useAssetStore = create<AssetState>((set, get) => ({
     let totalInvestment = 0;
     let totalValuation = 0;
 
-    assets
-      .filter(item => item.position === 0)
-      .forEach(item => {
-        const currentPrice = getCurrentPrice(item.market_code, tickers);
-        if (currentPrice === 0) return;
+    assets.forEach(item => {
+      const currentPrice = getCurrentPrice(item.market_code, tickers);
+      if (currentPrice === 0) return;
 
-        totalInvestment += item.total_price;
-        totalValuation += item.quantity * currentPrice;
-      });
+      totalInvestment += item.total_price;
+      totalValuation += item.quantity * currentPrice;
+    });
 
     return [totalInvestment, totalValuation];
   },
 
   getValuationSummary: (assets, tickers) => {
     const { getCurrentPrice } = get();
-    const buyItems = assets.filter(item => item.position === 0);
 
-    const totalInvestment = buyItems.reduce((sum, item) => sum + item.total_price, 0);
-    const totalValuation = buyItems.reduce((sum, item) => {
+    const totalInvestment = assets.reduce((sum, item) => sum + item.total_price, 0);
+    const totalValuation = assets.reduce((sum, item) => {
       const currentPrice = getCurrentPrice(item.market_code, tickers);
       return sum + item.quantity * currentPrice;
     }, 0);
@@ -114,8 +130,8 @@ export const useAssetStore = create<AssetState>((set, get) => ({
     const cumulativeProfitLossRate = totalInvestment > 0
       ? (cumulativeProfitLoss / totalInvestment) * 100
       : 0;
-    const averageInvestment = buyItems.length > 0
-      ? totalInvestment / buyItems.length
+    const averageInvestment = assets.length > 0
+      ? totalInvestment / assets.length
       : 0;
 
     return {
@@ -134,7 +150,6 @@ export const useAssetStore = create<AssetState>((set, get) => ({
     if (totalValuation === 0) return [];
 
     return assets
-      .filter(asset => asset.position === 0)
       .map(asset => {
         const currentPrice = getCurrentPrice(asset.market_code, tickers);
         if (currentPrice === 0) return { label: asset.coin_ticker, data: 0 };
@@ -285,5 +300,41 @@ getProfitLossDataFromTradeHistory: (
     totalBuyAmount,            
     totalSellAmount            
   };
+},
+
+// Portfolio 기반 총 요약 계산 메서드 구현
+getTotalSummaryFromPortfolio: (
+  assets: PortfolioItem[],
+  tickers: Record<string, any>,
+  holdings: number
+): [number, number, number, number, number] => {
+  const { getCurrentPrice } = get();
+  
+  // 총 매수 금액: 각 자산의 총 구매 가격 합계
+  const totalBuyAmount = assets.reduce((sum, asset) => sum + asset.total_price, 0);
+  
+  // 총 평가 금액: 현재 시세 × 보유 수량
+  const totalValuation = assets.reduce((sum, asset) => {
+    const currentPrice = getCurrentPrice(asset.market_code, tickers);
+    if (currentPrice === 0) return sum;
+    return sum + asset.quantity * currentPrice;
+  }, 0);
+  
+  // 총 보유 자산: 원화 자산
+  const totalAsset = holdings;
+  
+  // 총 평가 손익: 총 평가 금액 - 총 매수 금액
+  const totalProfitLoss = totalValuation - totalBuyAmount;
+  
+  // 총 평가 수익률: (총 평가 손익 / 총 매수 금액) × 100
+  const totalProfitLossRate = totalBuyAmount > 0 ? (totalProfitLoss / totalBuyAmount) * 100 : 0;
+  
+  return [
+    totalBuyAmount,      // 총 매수 금액
+    totalValuation,      // 총 평가 금액
+    totalAsset,          // 총 보유 자산
+    totalProfitLoss,     // 총 평가 손익
+    totalProfitLossRate  // 총 평가 수익률
+  ];
 }
 }));
