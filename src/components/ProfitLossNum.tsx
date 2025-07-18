@@ -126,23 +126,16 @@ const ProfitSummary = () => {
             </div>
           </div>
 
-          <div className="flex flex-col space-y-2 self-end">
-            <div className="flex flex-col items-start">
-              <span className="text-gray-500 font-medium">기간 누적 손익률</span>
-              <span className={`font-semibold my-2 ${displayData.cumulativeProfitLossRate >= 0 ? 'text-red-500' : 'text-blue-500'}`}>
-                {displayData.cumulativeProfitLossRate.toFixed(2)}%
-              </span>
-            </div>
-            <div className="flex flex-col items-start">
-              <span className="text-gray-500 font-medium">기간 평균 투자 금액</span>
-              <div className="space-x-1">
-                <span className="font-semibold">
-                  {displayData.averageInvestment.toLocaleString()}
-                </span>
-                <span className="text-gray-500 font-semibold">KRW</span>
-              </div>
+          <div className="flex flex-col items-start space-y-3 self-start">
+            <span className="text-gray-500 font-medium">기간 누적 손익률</span>
+            <div className="flex space-x-2">
+              <p className={`text-6xl font-bold ${displayData.cumulativeProfitLossRate >= 0 ? 'text-red-500' : 'text-blue-500'}`}>
+                {Math.floor(displayData.cumulativeProfitLossRate).toLocaleString()}
+              </p>
+              <p className="text-gray-500 font-semibold text-xl self-end">%</p>
             </div>
           </div>
+
         </div>
       ) : (
         <div className="flex justify-center items-center h-32">

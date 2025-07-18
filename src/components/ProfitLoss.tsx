@@ -44,11 +44,9 @@ export default function ProfitLossPage() {
           <ProfitLossWrapper />
 
           <div className="flex flex-col space-y-4">
-            <span className="text-gray-500 font-medium">투자손익 그래프</span>
-
             <div className="grid grid-cols-2 gap-4">
-              <CumulativeChart />
               <ProfitLossChart />
+              <CumulativeChart />
             </div>
           </div>
         </div>
