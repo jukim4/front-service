@@ -13,7 +13,7 @@ export interface TradeData {
   timestamp: number;
 }
 
-const UPBIT_WS_URL = process.env.UPBIT_WS_URL || 'wss://api.upbit.com/websocket/v1';
+const WS_URL = process.env.WS_URL || 'wss://localhost/ws' ||'wss://api.upbit.com/websocket/v1';
 
 // 마켓 정보를 가져오는 함수
 const fetchMarkets = async (): Promise<MarketInfo[]> => {
@@ -215,7 +215,7 @@ export const useMarketStore = create<MarketState>((set, get) => ({
     await get().loadInitialData();
     console.log('Initial data loaded successfully');
 
-    const websocket = new WebSocket(UPBIT_WS_URL);
+    const websocket = new WebSocket(WS_URL);
     let reconnectAttempts = 0;
     const maxReconnectAttempts = 5;
     const reconnectDelay = 3000; // 3초
