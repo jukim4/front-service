@@ -9,6 +9,16 @@ export type PortfolioDto = {
   total_cost: number;     // 총 구매 가격
 };
 
+// 거래내역 타입 정의
+export type TradeHistory = {
+  concludedAt: string;
+  marketCode: string;
+  orderPosition: 'BUY' | 'SELL';
+  orderType: string;
+  tradePrice: number;
+  tradeQuantity: number;
+};
+
 interface AssetState {
   assets: PortfolioDto[];
   holdings: number;
@@ -19,6 +29,21 @@ interface AssetState {
   getTotalValuation: (assets: PortfolioDto[], tickers: Record<string, any>) => [number, number];
   getDoughnutData: (assets: PortfolioDto[], tickers: Record<string, any>) => { label: string; data: number }[];
   getTotalSummary: (assets: PortfolioDto[], tickers: Record<string, any>, holdings: number) => [number, number, number, number, number];
+  getProfitLossSummary: (assets: PortfolioDto[], tickers: Record<string, any>, holdings: number) => {
+    periodProfitLoss: number;
+    periodProfitLossRate: number;
+  };
+  // 새로 추가되는 기간 누적 손익 메서드
+  getPeriodProfitLoss: (
+    tradeHistory: TradeHistory[], 
+    tickers: Record<string, any>, 
+    days: number
+  ) => {
+    periodProfitLoss: number;
+    periodProfitLossRate: number;
+    periodInvestment: number;
+    periodRealization: number;
+  };
 }
 
 // 보유코인 및 보유자산 조회 후 하나의 배열로 반환
@@ -112,5 +137,112 @@ export const useAssetStore = create<AssetState>((set, get) => ({
       totalProfitLoss,     // 총 평가 손익
       totalProfitLossRate  // 총 평가 수익률
     ];
-}
+  },
+
+  // 기간 누적 손익 계산 (거래내역 기반)
+  getPeriodProfitLoss: (
+    tradeHistory: TradeHistory[], 
+    tickers: Record<string, any>, 
+    days: number
+  ) => {
+    const { getCurrentPrice } = get();
+    
+    // N일 전 날짜 계산
+    const nDaysAgo = new Date();
+    nDaysAgo.setDate(nDaysAgo.getDate() - days);
+    
+    // 기간 내 거래 필터링
+    const periodTrades = tradeHistory.filter(trade => {
+      const tradeDate = new Date(trade.concludedAt);
+      return tradeDate >= nDaysAgo;
+    });
+
+    if (periodTrades.length === 0) {
+      return {
+        periodProfitLoss: 0,
+        periodProfitLossRate: 0,
+        periodInvestment: 0,
+        periodRealization: 0
+      };
+    }
+
+    // 기간 내 투자금 및 실현손익 계산
+    let totalInvestment = 0;  // 총 투자금 (매수금액)
+    let totalRealization = 0; // 총 실현금액 (매도금액)
+    const portfolioChanges: Record<string, { quantity: number; totalCost: number }> = {};
+
+    // 거래내역을 시간순으로 정렬
+    const sortedTrades = [...periodTrades].sort((a, b) => 
+      new Date(a.concludedAt).getTime() - new Date(b.concludedAt).getTime()
+    );
+
+    // 각 거래를 순회하며 포트폴리오 변화량 및 투자/실현 금액 계산
+    sortedTrades.forEach(trade => {
+      const market = trade.marketCode;
+      const unitPrice = trade.tradePrice / trade.tradeQuantity; // 단가 계산
+      
+      if (!portfolioChanges[market]) {
+        portfolioChanges[market] = { quantity: 0, totalCost: 0 };
+      }
+
+      if (trade.orderPosition === 'BUY') {
+        // 매수: 투자금 증가, 보유량 증가
+        totalInvestment += trade.tradePrice;
+        portfolioChanges[market].quantity += trade.tradeQuantity;
+        portfolioChanges[market].totalCost += trade.tradePrice;
+      } else if (trade.orderPosition === 'SELL') {
+        // 매도: 실현금액 증가, 보유량 감소
+        totalRealization += trade.tradePrice;
+        portfolioChanges[market].quantity -= trade.tradeQuantity;
+        
+        // 매도한 만큼 비례적으로 원가 감소
+        const sellRatio = trade.tradeQuantity / (portfolioChanges[market].quantity + trade.tradeQuantity);
+        portfolioChanges[market].totalCost -= portfolioChanges[market].totalCost * sellRatio;
+      }
+    });
+
+    // 미실현 손익 계산 (기간 중 보유량 변화분의 현재가치)
+    let unrealizedProfitLoss = 0;
+    
+    Object.entries(portfolioChanges).forEach(([market, changes]) => {
+      if (changes.quantity > 0) {
+        // 보유량이 증가한 경우: 현재가치 - 투자원가
+        const currentPrice = getCurrentPrice(market, tickers);
+        const currentValue = changes.quantity * currentPrice;
+        unrealizedProfitLoss += (currentValue - changes.totalCost);
+      } else if (changes.quantity < 0) {
+        // 보유량이 감소한 경우: 이미 실현손익에 반영됨
+        // 추가 계산 필요 없음
+      }
+    });
+
+    // 실현 손익 (매도금액 - 매도한 코인들의 원가)
+    const realizedProfitLoss = totalRealization - (totalInvestment * (totalRealization / (totalInvestment + Math.abs(totalRealization - totalInvestment))));
+
+    // 총 기간 누적 손익 = 실현손익 + 미실현손익
+    const periodProfitLoss = realizedProfitLoss + unrealizedProfitLoss;
+    
+    // 기간 수익률 계산 (투자금 대비)
+    const periodProfitLossRate = totalInvestment > 0 ? (periodProfitLoss / totalInvestment) * 100 : 0;
+
+    return {
+      periodProfitLoss: Number(periodProfitLoss.toFixed(2)),
+      periodProfitLossRate: Number(periodProfitLossRate.toFixed(2)),
+      periodInvestment: Number(totalInvestment.toFixed(2)),
+      periodRealization: Number(totalRealization.toFixed(2))
+    };
+  },
+
+  // 거래내역 기반 기간별 손익 계산
+  getProfitLossSummary: (assets: PortfolioDto[], tickers: Record<string, any>, holdings: number) => {
+    const { getTotalSummary } = get();
+    const [, , , totalProfitLoss, totalProfitLossRate] = getTotalSummary(assets, tickers, holdings);
+    const periodProfitLoss = totalProfitLoss;
+    const periodProfitLossRate = totalProfitLossRate;
+
+    return {
+      periodProfitLoss,
+      periodProfitLossRate
+    };
+  }
 }));

@@ -1,46 +1,36 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAssetStore } from '@/store/assetStore';
+import { useAssetStore, TradeHistory } from '@/store/assetStore';
 import { useMarketStore } from '@/store/marketStore';
 import { apiClient } from '@/lib/apiClient';
 
-// Ensure TradeHistory type is properly imported or defined
-type TradeHistory = {
-  concludedAt: string;
-  marketCode: string;
-  orderPosition: 'BUY' | 'SELL';
-  orderType: string;
-  tradePrice: number;
-  tradeQuantity: number;
-};
-
 const ProfitSummary = () => {
   const tickers = useMarketStore(state => state.tickers);
-  const { assets, holdings, getProfitLossDataFromTradeHistory } = useAssetStore();
+  const { getPeriodProfitLoss } = useAssetStore();
 
-  const [selectedPeriod, setSelectedPeriod] = useState("1개월");
+  const [selectedPeriod, setSelectedPeriod] = useState("1주일");
   const [tradeHistory, setTradeHistory] = useState<TradeHistory[]>([]);
-  const [displayData, setDisplayData] = useState<any>(null);
+  const [displayData, setDisplayData] = useState<{
+    periodProfitLoss: number;
+    periodProfitLossRate: number;
+    periodInvestment: number;
+    periodRealization: number;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Calculate start date based on selected period
-  const calculateStartDate = (period: string): Date => {
-    const now = new Date();
+  // 선택된 기간에 따른 일수 계산
+  const getPeriodDays = (period: string): number => {
     switch (period) {
-      case '1주일':
-        return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-      case '1개월':
-        return new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-      case '3개월':
-        return new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
-      case '6개월':
-        return new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000);
-      default:
-        return new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      case '1주일': return 7;
+      case '1개월': return 30;
+      case '3개월': return 90;
+      case '6개월': return 180;
+      default: return 30;
     }
   };
 
+  // 거래내역 가져오기
   useEffect(() => {
     const fetchTradeHistory = async () => {
       try {
@@ -58,43 +48,27 @@ const ProfitSummary = () => {
     fetchTradeHistory();
   }, []);
 
+  // 기간별 손익 계산
   useEffect(() => {
-    if (loading || !tradeHistory.length || !tickers) return;
+    if (loading || !tickers || Object.keys(tickers).length === 0) {
+      setDisplayData(null);
+      return;
+    }
 
-    const startDate = calculateStartDate(selectedPeriod);
-
-    const filteredTrades = tradeHistory.filter(trade => {
-      const tradeDate = new Date(trade.concludedAt);
-      return tradeDate >= startDate;
-    });
-
-    if (filteredTrades.length === 0) {
+    if (tradeHistory.length === 0) {
       setDisplayData({
-        cumulativeProfitLoss: 0,
-        cumulativeProfitLossRate: 0,
-        averageInvestment: 0
+        periodProfitLoss: 0,
+        periodProfitLossRate: 0,
+        periodInvestment: 0,
+        periodRealization: 0
       });
       return;
     }
 
-    const profitLossData = getProfitLossDataFromTradeHistory(filteredTrades, tickers);
+    const days = getPeriodDays(selectedPeriod);
+    const profitLossData = getPeriodProfitLoss(tradeHistory, tickers, days);
     setDisplayData(profitLossData);
-  }, [selectedPeriod, tradeHistory, tickers, loading, getProfitLossDataFromTradeHistory]);
-
-  useEffect(() => {
-    if (!tradeHistory.length && assets.length && tickers && !loading) {
-      const simulatedTrades = assets.map(asset => ({
-        concludedAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(), // Simulate 30 days ago
-        marketCode: asset.market_code,
-        orderPosition: 'BUY' as const,
-        orderType: 'LIMIT',
-        tradePrice: asset.total_price / asset.quantity || 0,
-        tradeQuantity: asset.quantity
-      }));
-
-      setTradeHistory(simulatedTrades);
-    }
-  }, [assets, tickers, loading, tradeHistory]);
+  }, [selectedPeriod, tradeHistory, tickers, loading, getPeriodProfitLoss]);
 
   return (
     <div className="flex flex-col space-y-4">
@@ -119,8 +93,9 @@ const ProfitSummary = () => {
           <div className="flex flex-col items-start space-y-3 self-start">
             <span className="text-gray-500 font-medium">기간 누적 손익</span>
             <div className="flex space-x-2">
-              <p className={`text-6xl font-bold ${displayData.cumulativeProfitLoss >= 0 ? 'text-red-500' : 'text-blue-500'}`}>
-                {Math.floor(displayData.cumulativeProfitLoss).toLocaleString()}
+              <p className={`text-6xl font-bold ${displayData.periodProfitLoss >= 0 ? 'text-red-500' : 'text-blue-500'}`}>
+                {displayData.periodProfitLoss >= 0 ? '+' : ''}
+                {Math.floor(displayData.periodProfitLoss).toLocaleString()}
               </p>
               <p className="text-gray-500 font-semibold text-xl self-end">KRW</p>
             </div>
@@ -129,8 +104,9 @@ const ProfitSummary = () => {
           <div className="flex flex-col items-start space-y-3 self-start">
             <span className="text-gray-500 font-medium">기간 누적 손익률</span>
             <div className="flex space-x-2">
-              <p className={`text-6xl font-bold ${displayData.cumulativeProfitLossRate >= 0 ? 'text-red-500' : 'text-blue-500'}`}>
-                {Math.floor(displayData.cumulativeProfitLossRate).toLocaleString()}
+              <p className={`text-6xl font-bold ${displayData.periodProfitLossRate >= 0 ? 'text-red-500' : 'text-blue-500'}`}>
+                {displayData.periodProfitLossRate >= 0 ? '+' : ''}
+                {Math.floor(displayData.periodProfitLossRate).toLocaleString()}
               </p>
               <p className="text-gray-500 font-semibold text-xl self-end">%</p>
             </div>
