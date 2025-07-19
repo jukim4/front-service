@@ -19,19 +19,19 @@ export default function HoldingCoinList() {
     return assets
       .filter(asset => asset.quantity > 0)
       .map(asset => {
-        const currentPrice = tickers[asset.market_code]?.trade_price || 0;
-        const coinTicker = asset.coin_ticker;
-        const avgBuyPrice = asset.total_price / asset.quantity; // 평단가 = 총 매수 금액 / 보유 수량
+        const currentPrice = tickers[asset.name]?.trade_price || 0;
+        const coinTicker = asset.name;
+        const avgBuyPrice = asset.total_cost / asset.quantity; // 평단가 = 총 매수 금액 / 보유 수량
         const valuation = asset.quantity * currentPrice;
-        const profitRate = asset.total_price === 0 ? 0 : ((valuation - asset.total_price) / asset.total_price) * 100;
+        const profitRate = asset.total_cost === 0 ? 0 : ((valuation - asset.total_cost) / asset.total_cost) * 100;
 
         return {
           coinTicker,
           quantity: asset.quantity,
           avgBuyPrice,
           currentPrice,
-          totalCost: asset.total_price,
-          profit: valuation - asset.total_price,
+          totalCost: asset.total_cost,
+          profit: valuation - asset.total_cost,
           profitRate,
         };
       });

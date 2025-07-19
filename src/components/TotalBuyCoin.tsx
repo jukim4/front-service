@@ -7,17 +7,17 @@ import { formatNumber, safeNumber } from "@/lib/numberUtils";
 
 export default function TotalBuyCoin() {
   const { tickers } = useMarketStore();
-  const { assets, holdings, getTotalSummaryFromPortfolio } = useAssetStore();
+  const { assets, holdings, getTotalSummary } = useAssetStore();
 
   const [summary, setSummary] = useState<[number, number, number, number, number]>([0, 0, 0, 0, 0]);
 
   // assets, holdings, tickers 변경 시 계산 다시 실행
   useEffect(() => {
     if (assets.length > 0 && Object.keys(tickers).length > 0) {
-      const result = getTotalSummaryFromPortfolio(assets, tickers, holdings);
+      const result = getTotalSummary(assets, tickers, holdings);
       setSummary(result);
     }
-  }, [assets, holdings, tickers, getTotalSummaryFromPortfolio]);
+  }, [assets, holdings, tickers, getTotalSummary]);
 
 
   const [totalBuy, totalValuation, totalAsset, profit, profitRate] = summary;
