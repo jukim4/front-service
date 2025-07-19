@@ -29,7 +29,7 @@ export default function CumulativeChart() {
   // Store 가져오기
   const tickers = useMarketStore(state => state.tickers);
   const assets = useAssetStore(state => state.assets);
-  const { getProfitLossDataFromTradeHistory } = useAssetStore();
+  const { getPeriodProfitLoss } = useAssetStore();
 
   // 거래 내역 기반 누적 수익률 계산 함수
   const calculateCumulativeProfitLossByDate = (trades: TradeHistory[]) => {
@@ -81,12 +81,12 @@ export default function CumulativeChart() {
 
       try {
         // assetStore의 메소드를 사용해 누적 수익률 계산
-        const profitLossData = getProfitLossDataFromTradeHistory(accumulatedTrades, tickers);
+        const profitLossData = getPeriodProfitLoss(accumulatedTrades, tickers, 30);
 
         // 결과 저장
         dataByDate.push({
           date,
-          cumulativeProfitLossRate: Number(profitLossData.cumulativeProfitLossRate.toFixed(2))
+          cumulativeProfitLossRate: Number(profitLossData.periodProfitLossRate.toFixed(2))
         });
       } catch (err) {
         console.error(`날짜 ${date} 처리 중 오류 발생:`, err);
