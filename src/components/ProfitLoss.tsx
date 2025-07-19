@@ -45,7 +45,7 @@ export default function ProfitLossPage() {
 
           <div className="flex flex-col space-y-4">
             <div className="grid grid-cols-2 gap-4">
-              {/* <ProfitLossChart /> */}
+              <ProfitLossChart />
               {/* <CumulativeChart /> */}
             </div>
           </div>
