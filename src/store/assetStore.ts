@@ -29,11 +29,7 @@ interface AssetState {
   getTotalValuation: (assets: PortfolioDto[], tickers: Record<string, any>) => [number, number];
   getDoughnutData: (assets: PortfolioDto[], tickers: Record<string, any>) => { label: string; data: number }[];
   getTotalSummary: (assets: PortfolioDto[], tickers: Record<string, any>, holdings: number) => [number, number, number, number, number];
-  getProfitLossSummary: (assets: PortfolioDto[], tickers: Record<string, any>, holdings: number) => {
-    periodProfitLoss: number;
-    periodProfitLossRate: number;
-  };
-  // 새로 추가되는 기간 누적 손익 메서드
+
   getPeriodProfitLoss: (
     tradeHistory: TradeHistory[], 
     tickers: Record<string, any>, 
@@ -41,8 +37,6 @@ interface AssetState {
   ) => {
     periodProfitLoss: number;
     periodProfitLossRate: number;
-    periodInvestment: number;
-    periodRealization: number;
   };
 }
 
@@ -161,8 +155,6 @@ export const useAssetStore = create<AssetState>((set, get) => ({
       return {
         periodProfitLoss: 0,
         periodProfitLossRate: 0,
-        periodInvestment: 0,
-        periodRealization: 0
       };
     }
 
@@ -179,7 +171,6 @@ export const useAssetStore = create<AssetState>((set, get) => ({
     // 각 거래를 순회하며 포트폴리오 변화량 및 투자/실현 금액 계산
     sortedTrades.forEach(trade => {
       const market = trade.marketCode;
-      const unitPrice = trade.tradePrice / trade.tradeQuantity; // 단가 계산
       
       if (!portfolioChanges[market]) {
         portfolioChanges[market] = { quantity: 0, totalCost: 0 };
@@ -227,22 +218,7 @@ export const useAssetStore = create<AssetState>((set, get) => ({
 
     return {
       periodProfitLoss: Number(periodProfitLoss.toFixed(2)),
-      periodProfitLossRate: Number(periodProfitLossRate.toFixed(2)),
-      periodInvestment: Number(totalInvestment.toFixed(2)),
-      periodRealization: Number(totalRealization.toFixed(2))
+      periodProfitLossRate: Number(periodProfitLossRate.toFixed(2))
     };
   },
-
-  // 거래내역 기반 기간별 손익 계산
-  getProfitLossSummary: (assets: PortfolioDto[], tickers: Record<string, any>, holdings: number) => {
-    const { getTotalSummary } = get();
-    const [, , , totalProfitLoss, totalProfitLossRate] = getTotalSummary(assets, tickers, holdings);
-    const periodProfitLoss = totalProfitLoss;
-    const periodProfitLossRate = totalProfitLossRate;
-
-    return {
-      periodProfitLoss,
-      periodProfitLossRate
-    };
-  }
 }));
