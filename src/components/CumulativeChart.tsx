@@ -21,8 +21,7 @@ type DataByDate = {
 export default function CumulativeChart() {
   const chartRef = useRef<Chart | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [tradeHistory, setTradeHistory] = useState<TradeHistory[]>([]);
+  const { tradeHistory, fetchTradeHistory, isTradeHistoryLoading } = useAssetStore();
   const [chartData, setChartData] = useState<DataByDate[]>([]);
   const [error, setError] = useState<string | null>(null);
 
@@ -99,35 +98,12 @@ export default function CumulativeChart() {
 
   // 거래 내역 가져오기
   useEffect(() => {
-    const fetchTradeHistory = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        // API에서 거래 내역 가져오기
-        const history = await apiClient.tradeHistory();
-        console.log(`API에서 ${history?.length || 0}개의 거래 내역을 불러왔습니다.`);
-
-        if (!history || history.length === 0) {
-          console.log("거래 내역이 없어 포트폴리오에서 시뮬레이션합니다.");
-        } else {
-          setTradeHistory(history);
-        }
-      } catch (error) {
-        console.error('거래 내역 가져오기 실패:', error);
-        setError("거래 내역을 불러오는데 실패했습니다.");
-        setTradeHistory([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchTradeHistory();
-  }, [assets]);
+  }, [fetchTradeHistory]);
 
   // 거래 내역으로부터 차트 데이터 계산
   useEffect(() => {
-    if (loading || !tradeHistory.length || !tickers || Object.keys(tickers).length === 0) {
+    if (isTradeHistoryLoading || !tradeHistory.length || !tickers || Object.keys(tickers).length === 0) {
       return;
     }
 
@@ -146,7 +122,7 @@ export default function CumulativeChart() {
       console.error("차트 데이터 계산 중 오류:", err);
       setError("데이터 계산 중 오류가 발생했습니다.");
     }
-  }, [tradeHistory, tickers, loading]);
+  }, [tradeHistory, tickers, isTradeHistoryLoading]);
 
   // 차트 그리기 (단 한번만 그리도록 설정)
   useEffect(() => {
@@ -248,7 +224,7 @@ export default function CumulativeChart() {
   return (
     <div className="w-full h-[500px] flex flex-col justify-center items-center p-4 rounded-xl bg-white">
       <div className="w-full h-full relative">
-        {loading ? (
+        {isTradeHistoryLoading ? (
           <div className="absolute inset-0 flex justify-center items-center">
             <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent" />
           </div>

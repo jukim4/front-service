@@ -7,17 +7,18 @@ import { apiClient } from '@/lib/apiClient';
 
 const ProfitSummary = () => {
   const tickers = useMarketStore(state => state.tickers);
-  const { getPeriodProfitLoss } = useAssetStore();
+  const { 
+    getPeriodProfitLoss, 
+    fetchTradeHistory, 
+    tradeHistory, 
+    isTradeHistoryLoading 
+  } = useAssetStore();
 
   const [selectedPeriod, setSelectedPeriod] = useState("1주일");
-  const [tradeHistory, setTradeHistory] = useState<TradeHistory[]>([]);
   const [displayData, setDisplayData] = useState<{
     periodProfitLoss: number;
     periodProfitLossRate: number;
-    periodInvestment: number;
-    periodRealization: number;
   } | null>(null);
-  const [loading, setLoading] = useState(true);
 
   // 선택된 기간에 따른 일수 계산
   const getPeriodDays = (period: string): number => {
@@ -32,25 +33,12 @@ const ProfitSummary = () => {
 
   // 거래내역 가져오기
   useEffect(() => {
-    const fetchTradeHistory = async () => {
-      try {
-        setLoading(true);
-        const history = await apiClient.tradeHistory();
-        setTradeHistory(history || []);
-      } catch (error) {
-        console.error('Failed to fetch trade history:', error);
-        setTradeHistory([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchTradeHistory();
-  }, []);
+  }, [fetchTradeHistory]);
 
   // 기간별 손익 계산
   useEffect(() => {
-    if (loading || !tickers || Object.keys(tickers).length === 0) {
+    if (isTradeHistoryLoading || !tickers || Object.keys(tickers).length === 0) {
       setDisplayData(null);
       return;
     }
@@ -58,9 +46,7 @@ const ProfitSummary = () => {
     if (tradeHistory.length === 0) {
       setDisplayData({
         periodProfitLoss: 0,
-        periodProfitLossRate: 0,
-        periodInvestment: 0,
-        periodRealization: 0
+        periodProfitLossRate: 0
       });
       return;
     }
@@ -68,7 +54,7 @@ const ProfitSummary = () => {
     const days = getPeriodDays(selectedPeriod);
     const profitLossData = getPeriodProfitLoss(tradeHistory, tickers, days);
     setDisplayData(profitLossData);
-  }, [selectedPeriod, tradeHistory, tickers, loading, getPeriodProfitLoss]);
+  }, [selectedPeriod, tradeHistory, tickers, isTradeHistoryLoading, getPeriodProfitLoss]);
 
   return (
     <div className="flex flex-col space-y-4">
@@ -84,7 +70,7 @@ const ProfitSummary = () => {
         ))}
       </div>
 
-      {loading ? (
+      {isTradeHistoryLoading ? (
         <div className="flex justify-center items-center h-32">
           <p>데이터를 불러오는 중...</p>
         </div>

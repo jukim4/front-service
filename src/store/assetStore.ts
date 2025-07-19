@@ -23,8 +23,14 @@ interface AssetState {
   assets: PortfolioDto[];
   holdings: number;
   isLoading: boolean;
+  // 거래내역 관련 상태 추가
+  tradeHistory: TradeHistory[];
+  isTradeHistoryLoading: boolean;
+  tradeHistoryLastFetch: number | null;
 
   fetchPortfolio: (market_code?: string) => Promise<void>;
+  // 거래내역 관련 메서드 추가
+  fetchTradeHistory: () => Promise<void>;
   getCurrentPrice: (market: string, tickers: Record<string, any>) => number;
   getTotalValuation: (assets: PortfolioDto[], tickers: Record<string, any>) => [number, number];
   getDoughnutData: (assets: PortfolioDto[], tickers: Record<string, any>) => { label: string; data: number }[];
@@ -52,6 +58,10 @@ export const useAssetStore = create<AssetState>((set, get) => ({
   assets: [],
   holdings: 0,
   isLoading: false,
+  // 거래내역 관련 상태 초기화
+  tradeHistory: [],
+  isTradeHistoryLoading: false,
+  tradeHistoryLastFetch: null,
 
   // 보유코인 및 보유자산 조회
   fetchPortfolio: async (market_code?: string) => {
@@ -64,6 +74,34 @@ export const useAssetStore = create<AssetState>((set, get) => ({
       set({ assets: portfolio, holdings: holdings });
     } finally {
       set({ isLoading: false });
+    }
+  },
+
+  // 거래내역 조회 (캐싱 지원)
+  fetchTradeHistory: async () => {
+    const { isTradeHistoryLoading, tradeHistoryLastFetch } = get();
+    
+    // 이미 로딩 중이면 중복 호출 방지
+    if (isTradeHistoryLoading) return;
+    
+    // 5분 이내에 가져온 데이터가 있으면 재사용
+    const cacheTimeout = 5 * 60 * 1000; // 5분
+    if (tradeHistoryLastFetch && Date.now() - tradeHistoryLastFetch < cacheTimeout) {
+      return;
+    }
+
+    try {
+      set({ isTradeHistoryLoading: true });
+      const history = await apiClient.tradeHistory();
+      set({ 
+        tradeHistory: history || [],
+        tradeHistoryLastFetch: Date.now()
+      });
+    } catch (error) {
+      console.error('Failed to fetch trade history:', error);
+      set({ tradeHistory: [] });
+    } finally {
+      set({ isTradeHistoryLoading: false });
     }
   },
 
