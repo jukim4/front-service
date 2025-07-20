@@ -1,0 +1,16 @@
+namespace: cowing-prod
+
+replicaCount: 1
+
+image:
+  repository: ghcr.io/coinwing/cowing-msa-front
+  tag: latest
+  pullPolicy: Always
+  pullSecretName: ghcr-login-secret
+
+containerPort: 3000
+
+service:
+  type: ClusterIP
+  port: 80
+  nodePort: 30080
