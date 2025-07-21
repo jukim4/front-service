@@ -22,7 +22,6 @@ const ChartComponent = createDynamicComponent(
 export const CandleChart = () => {
   const { candles, error, selected_time, timeUnit, isFetching, set_selectedTime, set_timeUnit, fetchAdditionCandles } = useCandleStore();
   const { markets, initializeMarkets, selectedMarket } = useMarketStore();
-  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   // 마켓 초기화 (한 번만 실행)
   useEffect(() => {
@@ -105,8 +104,14 @@ export const CandleChart = () => {
       </div>
       
       <div className="relative">
-        <canvas ref={canvasRef} id="candle-chart" width={800} height={400}></canvas>
-        
+        {candles.length > 0 && (
+        <ChartComponent 
+          key={`${selectedMarket}-${selected_time.time}-${selected_time.cnt}`}
+          market={selectedMarket} 
+          candle={candles}  
+          timeUnit={timeUnit as 'millisecond' | 'second' | 'minute' | 'hour' | 'day' | 'week' | 'month' | 'quarter' | 'year'}
+        />
+        )}        
         {(candles.length === 0 || isFetching) && (
           <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-90 border border-gray-200 rounded-lg">
             <div className="flex items-center text-gray-500">
@@ -117,15 +122,7 @@ export const CandleChart = () => {
         )}
       </div>
 
-      {candles.length > 0 && (
-        <ChartComponent 
-          key={`${selectedMarket}-${selected_time.time}-${selected_time.cnt}`}
-          market={selectedMarket} 
-          candle={candles} 
-          canvasRef={canvasRef} 
-          timeUnit={timeUnit as 'millisecond' | 'second' | 'minute' | 'hour' | 'day' | 'week' | 'month' | 'quarter' | 'year'}
-        />
-      )}
+      
       
     </div>
   )
