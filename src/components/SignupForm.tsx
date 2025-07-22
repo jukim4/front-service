@@ -27,7 +27,7 @@ export default function SignupForm({ onSwitch }: SignupFormProps) {
   const [password, setPassword] = useState('');
   const [username, setUserName] = useState('');
   const [nickname, setNickName] = useState('');
-  const { handleSingup } = useAuth(); // Assuming useAuth hook is available
+  const { handleSignup } = useAuth(); // Assuming useAuth hook is available
 
   const [ checkSignup, setCheckSignup ] = useState(false); // 회원가입 가능 여부
   const [ signupInfo, setSignupInfo ] = useState<string | undefined>();
@@ -46,7 +46,7 @@ export default function SignupForm({ onSwitch }: SignupFormProps) {
     }
 
     try {
-      const result = await handleSingup(email, nickname, password, username);
+      const result = await handleSignup(email, nickname, password, username);
       if (result.success) {
 
       } else {

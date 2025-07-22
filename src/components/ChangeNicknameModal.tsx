@@ -7,7 +7,7 @@ interface ChangeNicknameModalProps {
   onClose: () => void;
   onSuccess?: () => void;
   currentNickname?: string;
-  newNickname: string; // MyPage에서 입력받은 새 닉네임
+  newNickname: string;
 }
 
 export default function ChangeNicknameModal({ 
@@ -24,7 +24,6 @@ export default function ChangeNicknameModal({
   const { handleChangeNickname } = useUser();
   const { setUser, user } = useAuthStore();
 
-  // 모달이 열릴 때마다 상태 초기화
   useEffect(() => {
     if (isOpen) {
       setNicknameStep('confirm');
@@ -48,7 +47,6 @@ export default function ChangeNicknameModal({
       const result = await handleChangeNickname(newNickname);
       
       if (result.success) {
-        // 성공 시 사용자 정보 업데이트
         if (user) {
           setUser({
             ...user,
@@ -57,11 +55,10 @@ export default function ChangeNicknameModal({
         }
         setNicknameStep('done');
         
-        // 성공 콜백 호출
         if (onSuccess) {
           setTimeout(() => {
             onSuccess();
-          }, 1500); // 1.5초 후 자동 닫기
+          }, 1500);
         }
       } else {
         setErrorMessage(result.message || "닉네임 변경에 실패했습니다.");
@@ -79,7 +76,6 @@ export default function ChangeNicknameModal({
     <div className="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center">
       <div className="bg-white rounded-md shadow-lg p-6 w-[350px] text-center z-50">
         
-        {/* 확인 단계 */}
         {nicknameStep === 'confirm' && (
           <>
             <h3 className="text-lg font-semibold mb-4">닉네임 변경 확인</h3>
@@ -120,13 +116,16 @@ export default function ChangeNicknameModal({
           </>
         )}
 
-        {/* 완료 단계 */}
         {nicknameStep === 'done' && (
           <>
             <div className="text-green-500 text-4xl mb-4">✓</div>
             <h3 className="text-lg font-semibold mb-2">변경 완료</h3>
             <p className="text-gray-600 mb-6">
-              닉네임이 '<span className="font-medium text-blue-600">{newNickname}</span>'로 변경되었습니다.
+              닉네임이{' '}
+              <span className="font-medium text-blue-600">
+                &quot;{newNickname}&quot;
+              </span>
+              로 변경되었습니다.
             </p>
             <button
               onClick={handleClose}
