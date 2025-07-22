@@ -2,19 +2,18 @@
 
 import { useState } from "react";
 
-import { useAuth } from "@/hooks/useAuth";
 import { useAuthStore } from "@/store/authStore";
+import { useUser } from "@/hooks/useUser";
 
 
 export default function Password() {
   const [currentPw, setCurrentPw] = useState("");
   const [newPw, setNewPw] = useState("");
   const [confirmPw, setConfirmPw] = useState("");
-  const { handleChangePasswd } = useAuth();
+  const { handleChangePasswd } = useUser();
+  const { user } = useAuthStore();
   const [ checkFail, setCheckFail ] = useState(false);
   const [ failInfo, setFailInfo ] = useState<string | undefined>();
-
-  const { user } = useAuthStore();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

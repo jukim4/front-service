@@ -21,7 +21,7 @@ export const useAuth = () => {
     }
   };
 
-  const handleSingup = async (email: string, nickname: string, passwd: string, username: string) => {
+  const handleSignup = async (email: string, nickname: string, passwd: string, username: string) => {
     try {
       const result = await apiClient.signup(email, nickname, passwd, username);
       if (result.success) {
@@ -39,22 +39,11 @@ export const useAuth = () => {
     window.location.href = '/login';
   };
 
-  const handleChangePasswd = async (email: string, currentPwd: string, newPwd: string) => {
-    const { success, message } = await apiClient.passwdChange(email, currentPwd, newPwd);
-
-    if (success) {
-      return { success, message };;
-    } else {
-      return { success, message };
-    }
-  };
-
   return {
     user,
     isAuthenticated,
     login: handleLogin,
     logout: handleLogout,
-    handleChangePasswd,
-    handleSingup,
+    handleSignup,
   };
 }; 
