@@ -19,7 +19,7 @@ export const tokenUtils = {
     },
     
     // 토큰 유효성 검사 함수(기간)
-    isTokenValie: () => {
+    isAccessTokenValid: () => {
       const token = tokenUtils.returnTokens().accessToken;
       if (!token) return false;
     
@@ -31,4 +31,17 @@ export const tokenUtils = {
         return false;
       }
     },
+
+    isRefreshTokenValid: () => {
+      const token = tokenUtils.returnTokens().refreshToken;
+      if(!token) return false;
+
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const isExpired = payload.exp * 1000 < Date.now();
+        return !isExpired;
+      } catch (error) {
+        return false;
+      }
+    }
 }
