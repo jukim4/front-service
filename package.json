@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "form-data": ">=4.0.4",
     "@radix-ui/react-dropdown-menu": "^2.1.15",
     "@radix-ui/react-select": "^2.2.5",
     "@radix-ui/react-slot": "^1.2.3",
@@ -35,6 +36,7 @@
     "zustand": "^5.0.5"
   },
   "devDependencies": {
+    "form-data": ">=4.0.4",
     "@types/js-cookie": "^3.0.6",
     "@types/node": "^20.19.6",
     "@types/react": "^18.2.61",
