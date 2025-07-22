@@ -1,19 +1,49 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
 import { useAuthStore } from '@/store/authStore';
+import ChangeNicknameModal from './ChangeNicknameModal';
 
 export default function MyPage() {
     const [bankruptcyStep, setBankruptcyStep] = useState<'none' | 'confirm' | 'done'>('none');
+    const [isNicknameModalOpen, setIsNicknameModalOpen] = useState(false);
+    const [nicknameInput, setNicknameInput] = useState(''); // 닉네임 입력 상태
+    const { user } = useAuthStore();
 
-    const {user} = useAuthStore();
+    // 컴포넌트 마운트 시 현재 닉네임을 입력창에 설정
+    useEffect(() => {
+        if (user?.nickname) {
+            setNicknameInput(user.nickname);
+        }
+    }, [user?.nickname]);
 
     const openBankruptcyModal = () => setBankruptcyStep('confirm');
     const closeBankruptcyModal = () => setBankruptcyStep('none');
     const confirmBankruptcy = () => setBankruptcyStep('done');
     const finalizeBankruptcy = () => setBankruptcyStep('none');
+
+    // 닉네임 변경 모달 열기
+    const handleNicknameChange = () => {
+        if (!nicknameInput.trim()) {
+            alert('닉네임을 입력해주세요.');
+            return;
+        }
+        
+        if (nicknameInput.trim() === user?.nickname) {
+            alert('현재 닉네임과 동일합니다.');
+            return;
+        }
+        
+        setIsNicknameModalOpen(true);
+    };
+
+    // 닉네임 변경 성공 시 입력창 업데이트
+    const handleNicknameChangeSuccess = () => {
+        setIsNicknameModalOpen(false);
+        // 모달에서 이미 전역 상태를 업데이트하므로 추가 작업 불필요
+    };
 
     return (
         <div className="min-h-[90vh] bg-gray-100 p-10">
@@ -25,12 +55,18 @@ export default function MyPage() {
                     <div className="space-y-4">
                         <h2 className="text-lg font-semibold">기본 정보</h2>
                         <div>
-                            <label className="block text-sm font-medium">이름</label>
+                            <label className="block text-sm font-medium">닉네임</label>
                             <input
                                 type="text"
+                                value={nicknameInput}
+                                onChange={(e) => setNicknameInput(e.target.value)}
                                 placeholder="닉네임"
                                 className="mt-1 w-full border px-3 py-2 rounded text-sm"
+                                maxLength={20}
                             />
+                            <p className="text-xs text-gray-400 mt-1">
+                                현재 저장된 닉네임: {user?.nickname || '없음'}
+                            </p>
                         </div>
                         <div>
                             <label className="block text-sm font-medium">이메일</label>
@@ -62,7 +98,9 @@ export default function MyPage() {
                             파산 신청
                         </button>
                         <button
+                            onClick={handleNicknameChange}
                             className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 text-sm"
+                            disabled={!nicknameInput.trim()}
                         >
                             변경사항 저장
                         </button>
@@ -110,6 +148,15 @@ export default function MyPage() {
                     </div>
                 </div>
             )}
+
+            {/* 닉네임 변경 모달 */}
+            <ChangeNicknameModal
+                isOpen={isNicknameModalOpen}
+                onClose={() => setIsNicknameModalOpen(false)}
+                onSuccess={handleNicknameChangeSuccess}
+                currentNickname={user?.nickname || ''}
+                newNickname={nicknameInput.trim()}
+            />
         </div>
     );
 }

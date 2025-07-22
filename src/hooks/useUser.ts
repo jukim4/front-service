@@ -16,9 +16,20 @@ export const useUser = () => {
     }
   };
 
+  const handleChangeNickname = async (nickname: string) => {
+    const { success, message } = await apiClient.changeNickname(nickname);
+
+    if (success) {
+      return { success, message };
+    } else {
+      return { success, message };
+    }
+  };
+
   return {
     user,
     isAuthenticated,
     handleChangePasswd,
+    handleChangeNickname,
   };
 }; 

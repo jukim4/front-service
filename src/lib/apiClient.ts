@@ -157,6 +157,29 @@ class ApiClient {
     }
   }
 
+  // 닉네임 변경
+  async changeNickname(nickname: string) {
+    const token = tokenUtils.returnTokens().accessToken;
+    
+    const res = await this.authFetch(`${this.baseURL}/api/v1/change/nickname`, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ nickname }),
+    });
+
+    if (res.status === 201) {
+      const data = await res.json();
+      return { success: true, message: data.message };
+    }
+    else {
+      const errorData = await res.json();
+      return { success: false, message: errorData.message || 'Nickname change failed' };
+    }
+  }
+
   // 회원가입
   async signup(email: string, nickname: string, passwd: string, username: string) {
     const res = await fetch(`${this.baseURL}/api/v1/signup`, {
