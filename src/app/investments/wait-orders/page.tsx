@@ -10,7 +10,7 @@ import MarketListComponent from "@/components/MarketListComponent";
 import { apiClient } from "@/lib/apiClient";
 
 type PendingOrder = {
-  id: string;
+  uuid: string;
   marketCode: string;
   orderType: string;
   orderPosition: string;
@@ -80,7 +80,7 @@ export default function WaitOrders() {
 
     // Remove the canceled orders from the 'orders' state
     setOrders((prevOrders) =>
-      prevOrders.filter((order) => !selectedOrders.has(order.id))
+      prevOrders.filter((order) => !selectedOrders.has(order.uuid))
     );
 
     // Reset the selected orders set
@@ -141,7 +141,7 @@ export default function WaitOrders() {
                             type="checkbox"
                             onChange={(e) => {
                               if (e.target.checked) {
-                                setSelectedOrders(new Set(filteredOrders.map(order => order.id)));
+                                setSelectedOrders(new Set(filteredOrders.map(order => order.uuid)));
                               } else {
                                 setSelectedOrders(new Set());
                               }
@@ -166,12 +166,13 @@ export default function WaitOrders() {
                         </tr>
                       ) : (
                         filteredOrders.map((pendingorder) => (
-                          <tr key={pendingorder.id}>
+                          <tr key={pendingorder.uuid}>
                             <td className="px-4 py-2">
                               <input
+                                id={pendingorder.uuid}
                                 type="checkbox"
-                                checked={selectedOrders.has(pendingorder.id)}
-                                onChange={() => handleSelectOrder(pendingorder.id)}
+                                checked={selectedOrders.has(pendingorder.uuid)}
+                                onChange={() => handleSelectOrder(pendingorder.uuid)}
                               />
                             </td>
                             <td className="text-center text-gray-500 text-xs py-3">{format(pendingorder.orderRequestedAt, "yyyy-MM-dd HH:mm:ss")}</td>
