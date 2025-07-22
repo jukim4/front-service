@@ -52,7 +52,7 @@ export default function LoginForm({ onSwitch }: LoginFormProps) {
       <h2 className="text-2xl font-bold text-left">로그인</h2>
       <input
         type="text"
-        placeholder="이름을 입력해주세요"
+        placeholder="사용자 이름을 입력해주세요"
         value={username}
         onChange={(e) => setUserName(e.target.value)}
         required
