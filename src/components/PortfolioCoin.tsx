@@ -14,9 +14,16 @@ type Props = {
 
 const PortfolioCoin = ({ datas }: Props) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const chartRef = useRef<Chart | null>(null);
 
   useEffect(() => {
     if (!canvasRef.current) return;
+
+    // 차트 중복 생성 방지
+    if(chartRef.current) {
+      chartRef.current.destroy();
+      chartRef.current = null;
+    }
 
     const hasData = datas && datas.length > 0 && datas.some(d => d.data > 0);
 
@@ -57,6 +64,8 @@ const PortfolioCoin = ({ datas }: Props) => {
 
     return () => {
       chartInstance.destroy();
+      chartRef.current?.destroy();
+      chartRef.current = null;
     };
   }, [datas]);
 
