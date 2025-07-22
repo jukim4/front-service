@@ -6,9 +6,6 @@ import { useEffect, useState } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { useAuth } from '@/hooks/useAuth';
 
-import { apiClient } from '@/lib/apiClient';
-
-
 export default function Header() {
   const pathname = usePathname();
   const { user, isAuthenticated } = useAuthStore();
@@ -16,14 +13,6 @@ export default function Header() {
   
   // 로그인 상태 확인용 state
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-
-  useEffect(() => {
-    apiClient.checkAuth()
-
-    const interval = setInterval(() => {
-      apiClient.checkAuth();
-    }, 3600000); // 1시간마다 인증 유효성 검사
-  }, []);
 
   return (
     <nav className="border-b bg-blue-900 text-white fixed top-0 left-0 right-0 z-50">

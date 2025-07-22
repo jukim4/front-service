@@ -11,35 +11,43 @@ class ApiClient {
     this.baseURL = baseURL;
   }
 
-  // token 유효성 검증
-  async checkAuth() {
-    const { accessToken, refreshToken } = tokenUtils.returnTokens();
-    const isValid = tokenUtils.isTokenValie();
-    if (!accessToken) {
-      useAuthStore.setState({ isAuthenticated: false });
-      return;
+  private async authFetch(input: RequestInfo, init: RequestInit = {}): Promise<Response> {
+    const isAccessValid= tokenUtils.isAccessTokenValid();
+    const isRefreshValid = tokenUtils.isRefreshTokenValid();
 
-    } else if (!isValid) {
-      console.error("AccessToken is not valid");
-      if (!refreshToken) {
+    if (!isAccessValid) {
+      if(isRefreshValid) {        
+        const success = await this.refreshToken();
+        if(!success) {
+          // refresh 실패
+          this.logout();
+          return Promise.reject('리프레시 실패로 로그아웃');
+        } 
+      } else {
+        Cookies.remove('token'); // 쿠키에 저장된 토큰 삭제
+        localStorage.clear(); // 토큰 초기화
         useAuthStore.setState({ isAuthenticated: false });
-        return;
+        window.location.reload();
+        return Promise.reject('Token expiration');
       }
-      this.refreshToken();
-      window.location.href = '/login';
-    }
-    useAuthStore.setState({ isAuthenticated: !accessToken ? false : true });
 
+    }
+
+    const updatedToken = tokenUtils.returnTokens().accessToken;
+
+    return fetch(input, {
+      ...init,
+      headers: {
+        ...init.headers,
+        Authorization: `Bearer ${updatedToken}`,
+      },
+    });
   }
 
   // accessToken 갱신 함수
   private async refreshToken(): Promise<boolean> {
     try {
       const refresh = tokenUtils.returnTokens().refreshToken;
-      if (!refresh) {
-        console.error('RefreshToken is not available');
-        return false;
-      }
 
       const res = await fetch(`${this.baseURL}/api/v1/refresh`, {
         method: 'POST',
@@ -48,20 +56,19 @@ class ApiClient {
       });
 
       if (res.status === 200) {
-        res.json().then((data) => {
-          // tokenUtils.updateTokens(data.accessToken, data.refreshToken);
-        });
-
+        const data = await res.json();
+        tokenUtils.updateTokens(data.accessToken, data.refreshToken);
         return true;
       } else {
         console.error('Failed to refresh access token');
         useAuthStore.setState({ isAuthenticated: false });
         // 토큰 갱신 실패 시 로그아웃 처리
         this.logout();
-        window.location.href = '/login';
+        // window.location.href = '/login';
         return false;
       }
-    } catch {
+    } catch (err) {
+      console.error('Refresh token request failed: ', err);
       return false;
     }
   }
@@ -112,7 +119,7 @@ class ApiClient {
 
   // 로그아웃
   async logout() {
-    const ref = await fetch(`${this.baseURL}/api/v1/logout`, {
+    const ref = await this.authFetch(`${this.baseURL}/api/v1/logout`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
@@ -175,7 +182,7 @@ class ApiClient {
 
       if (position === "buy") {
 
-        const res = await fetch(`${this.baseURL}/api/v1/orders/market/${position}`, {
+        const res = await this.authFetch(`${this.baseURL}/api/v1/orders/market/${position}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
           body: JSON.stringify({ coin_ticker, position, total_price: total, market_code }),
@@ -189,7 +196,7 @@ class ApiClient {
         }
 
       } else {
-        const res = await fetch(`${this.baseURL}/api/v1/orders/market/${position}`, {
+        const res = await this.authFetch(`${this.baseURL}/api/v1/orders/market/${position}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
           body: JSON.stringify({ coin_ticker, position, total_quantity: total, market_code }),
@@ -213,7 +220,7 @@ class ApiClient {
   async orderLimit(market_code: string, coin_ticker: string, order_price: number, position: string, order_quantity: number, total_order_price: number) {
     const token = tokenUtils.returnTokens().accessToken;
     try {
-      const res = await fetch(`${this.baseURL}/api/v1/orders/limit`, {
+      const res = await this.authFetch(`${this.baseURL}/api/v1/orders/limit`, {
         method: "POST",
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ market_code, coin_ticker, position, order_price, order_quantity, total_order_price }),
@@ -235,7 +242,7 @@ class ApiClient {
   async userHoldings() {
     const token = tokenUtils.returnTokens().accessToken;
     try {
-      const res = await fetch(`${this.baseURL}/api/v1/asset`, {
+      const res = await this.authFetch(`${this.baseURL}/api/v1/asset`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -260,7 +267,7 @@ class ApiClient {
   async userInfo() {
     const token = tokenUtils.returnTokens().accessToken;
     try {
-      const res = await fetch(`${this.baseURL}/api/v1/infos`, {
+      const res = await this.authFetch(`${this.baseURL}/api/v1/infos`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -292,7 +299,7 @@ class ApiClient {
         url += `?market_code=${encodeURIComponent(market_code)}`;
       }
 
-      const res = await fetch(url, {
+      const res = await this.authFetch(url, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -317,7 +324,7 @@ class ApiClient {
   async tradeHistory() {
     const token = tokenUtils.returnTokens().accessToken;
     try {
-      const res = await fetch(`${this.baseURL}/api/v1/histories/trades`, {
+      const res = await this.authFetch(`${this.baseURL}/api/v1/histories/trades`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -346,7 +353,7 @@ class ApiClient {
   async pendingOrders() {
     const token = tokenUtils.returnTokens().accessToken;
     try {
-      const res = await fetch(`${this.baseURL}/api/v1/histories/orders/pending`, {
+      const res = await this.authFetch(`${this.baseURL}/api/v1/histories/orders/pending`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
