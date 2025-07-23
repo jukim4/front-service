@@ -49,9 +49,11 @@ jobs:
         with:
           context: .
           push: true
+          build-args: |
+            NEXT_PUBLIC_URL=https://api.cowing.co.kr
           tags: |
             ${{ env.REGISTRY }}/${{ steps.image_name.outputs.image_name }}:${{ steps.version.outputs.version }}
-            ${{ env.REGISTRY }}/${{ steps.image_name.outputs.image_name }}:latest 
+            ${{ env.REGISTRY }}/${{ steps.image_name.outputs.image_name }}:latest
 
       # 디스코드 알람 전송
       - name: Send Discord Notification
