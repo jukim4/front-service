@@ -6,8 +6,8 @@ import { tokenUtils } from '@/lib/tokenUtils';
 export const useUser = () => {
   const { user, isAuthenticated } = useAuthStore();
 
-  const handleChangePasswd = async (email: string, currentPwd: string, newPwd: string) => {
-    const { success, message } = await apiClient.passwdChange(email, currentPwd, newPwd);
+  const handleChangePasswd = async (currentPwd: string, newPwd: string) => {
+    const { success, message } = await apiClient.passwdChange(currentPwd, newPwd);
 
     if (success) {
       return { success, message };

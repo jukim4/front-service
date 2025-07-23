@@ -140,11 +140,14 @@ class ApiClient {
   }
 
   // 비밀번호 변경
-  async passwdChange(email: string, currentPwd: string, newPwd: string) {
+  async passwdChange(currentPwd: string, newPwd: string) {
     const res = await fetch(`${this.baseURL}/api/v1/change/passwd`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, currentPwd, newPwd }),
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${tokenUtils.returnTokens().accessToken}`
+      },
+      body: JSON.stringify({ currentPwd, newPwd }),
     });
 
     if (res.status === 201) {

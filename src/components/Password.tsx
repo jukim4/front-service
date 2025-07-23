@@ -29,7 +29,7 @@ export default function Password() {
     }
     
     try {
-      const result = await handleChangePasswd(user.email, currentPw, newPw);
+      const result = await handleChangePasswd(currentPw, newPw);
       
       if(result.success) {
         window.location.href ='/mypage';
