@@ -6,12 +6,13 @@ import Link from 'next/link';
 import { useAuthStore } from '@/store/authStore';
 import ChangeNicknameModal from './ChangeNicknameModal';
 import DeleteUserModal from './DeleteUserModal';
+import BankruptModal from './BankruptModal';
 
 export default function MyPage() {
-    const [bankruptcyStep, setBankruptcyStep] = useState<'none' | 'confirm' | 'done'>('none');
     const [isNicknameModalOpen, setIsNicknameModalOpen] = useState(false);
     const [nicknameInput, setNicknameInput] = useState(''); // 닉네임 입력 상태
     const [isDeleteUserModalOpen, setIsDeleteUserModalOpen] = useState(false);
+    const [isBankruptModalOpen, setIsBankruptModalOpen] = useState(false);
     const { user } = useAuthStore();
 
     // 컴포넌트 마운트 시 현재 닉네임을 입력창에 설정
@@ -21,10 +22,7 @@ export default function MyPage() {
         }
     }, [user?.nickname]);
 
-    const openBankruptcyModal = () => setBankruptcyStep('confirm');
-    const closeBankruptcyModal = () => setBankruptcyStep('none');
-    const confirmBankruptcy = () => setBankruptcyStep('done');
-    const finalizeBankruptcy = () => setBankruptcyStep('none');
+
 
     // 닉네임 변경 모달 열기
     const handleNicknameChange = () => {
@@ -50,6 +48,11 @@ export default function MyPage() {
     const handleDeleteUserSuccess = () => {
         setIsDeleteUserModalOpen(false);
         // 모달에서 이미 전역 상태를 업데이트하므로 추가 작업 불필요
+    };
+
+    const handleBankruptSuccess = () => {
+        setIsBankruptModalOpen(false);
+        // 모달에서 이미 파산 처리가 완료됨
     };
 
     return (
@@ -102,7 +105,7 @@ export default function MyPage() {
                             </Link>
                         </button>
                         <button
-                            onClick={openBankruptcyModal}
+                            onClick={() => setIsBankruptModalOpen(true)}
                             className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 text-sm"
                         >
                             파산 신청
@@ -118,46 +121,7 @@ export default function MyPage() {
                 </div>
             </div>
 
-            {/* 파산 신청 모달 */}
-            {bankruptcyStep !== 'none' && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center">
-                    <div className="bg-white rounded-md shadow-lg p-6 w-[300px] text-center z-50">
-                        {bankruptcyStep === 'confirm' && (
-                            <>
-                                <p className="text-lg font-semibold mb-6">
-                                    정말 파산하시겠습니까?
-                                </p>
-                                <div className="flex justify-center gap-4">
-                                    <button
-                                        onClick={closeBankruptcyModal}
-                                        className="px-4 py-2 border border-blue-500 text-blue-500 rounded hover:bg-blue-50"
-                                    >
-                                        취소
-                                    </button>
-                                    <button
-                                        onClick={confirmBankruptcy}
-                                        className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                                    >
-                                        파산 신청
-                                    </button>
-                                </div>
-                            </>
-                        )}
 
-                        {bankruptcyStep === 'done' && (
-                            <>
-                                <p className="text-lg font-semibold mb-6">파산되었습니다</p>
-                                <button
-                                    onClick={finalizeBankruptcy}
-                                    className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                                >
-                                    확인
-                                </button>
-                            </>
-                        )}
-                    </div>
-                </div>
-            )}
 
             {/* 회원탈퇴 모달 */}
             <DeleteUserModal
@@ -173,6 +137,13 @@ export default function MyPage() {
                 onSuccess={handleNicknameChangeSuccess}
                 currentNickname={user?.nickname || ''}
                 newNickname={nicknameInput.trim()}
+            />
+
+            {/* 파산 신청 모달 */}
+            <BankruptModal
+                isOpen={isBankruptModalOpen}
+                onClose={() => setIsBankruptModalOpen(false)}
+                onSuccess={handleBankruptSuccess}
             />
         </div>
     );

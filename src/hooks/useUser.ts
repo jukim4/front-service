@@ -35,11 +35,22 @@ export const useUser = () => {
     }
   }
 
+  const handleBankrupt = async () => {
+    const { success, message } = await apiClient.bankrupt();
+
+    if (success) {
+      return { success, message };
+    } else {
+      return { success, message };
+    }
+  }
+
   return {
     user,
     isAuthenticated,
     handleChangePasswd,
     handleChangeNickname,
     handleDeleteUser,
+    handleBankrupt,
   };
 }; 

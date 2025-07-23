@@ -424,6 +424,25 @@ class ApiClient {
         return { success: false, message: '회원탈퇴가 실패하였습니다.' };
       }
     }
+
+    // 파산 신청
+    async bankrupt() {
+      const token = tokenUtils.returnTokens().accessToken;
+      const res = await this.authFetch(`${this.baseURL}/api/v1/bankrupt`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+  
+      if (res.status === 200) {
+        return { success: true, message: '파산 신청이 완료되었습니다.' };
+      } else {
+        const errorData = await res.json();
+        return { success: false, message: errorData.message || '파산 신청이 실패하였습니다.' };
+      }
+    }
     
 }
 
