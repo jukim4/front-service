@@ -402,6 +402,29 @@ class ApiClient {
       throw err;
     }
   }
+  
+    // 회원탈퇴
+    async deleteUser() {
+      const token = tokenUtils.returnTokens().accessToken;
+      const res = await this.authFetch(`${this.baseURL}/api/v1/deletion`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+  
+      if (res.status === 200) {
+        setTimeout(() => {
+          this.logout();
+          window.location.href = '/';
+        }, 3000);
+        return { success: true, message: '회원탈퇴가 성공하였습니다. 3초 후에 메인 페이지로 이동합니다.' };
+      } else {
+        return { success: false, message: '회원탈퇴가 실패하였습니다.' };
+      }
+    }
+    
 }
 
 export const apiClient = new ApiClient(URL);

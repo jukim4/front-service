@@ -1,7 +1,6 @@
 
 import { useAuthStore } from '@/store/authStore';
 import { apiClient } from '@/lib/apiClient';
-import { tokenUtils } from '@/lib/tokenUtils';
 
 export const useUser = () => {
   const { user, isAuthenticated } = useAuthStore();
@@ -26,10 +25,21 @@ export const useUser = () => {
     }
   };
 
+  const handleDeleteUser = async () => {
+    const { success, message } = await apiClient.deleteUser();
+
+    if (success) {
+      return { success, message };
+    } else {
+      return { success, message };
+    }
+  }
+
   return {
     user,
     isAuthenticated,
     handleChangePasswd,
     handleChangeNickname,
+    handleDeleteUser,
   };
 }; 

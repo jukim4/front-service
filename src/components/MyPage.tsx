@@ -5,11 +5,13 @@ import Link from 'next/link';
 
 import { useAuthStore } from '@/store/authStore';
 import ChangeNicknameModal from './ChangeNicknameModal';
+import DeleteUserModal from './DeleteUserModal';
 
 export default function MyPage() {
     const [bankruptcyStep, setBankruptcyStep] = useState<'none' | 'confirm' | 'done'>('none');
     const [isNicknameModalOpen, setIsNicknameModalOpen] = useState(false);
     const [nicknameInput, setNicknameInput] = useState(''); // 닉네임 입력 상태
+    const [isDeleteUserModalOpen, setIsDeleteUserModalOpen] = useState(false);
     const { user } = useAuthStore();
 
     // 컴포넌트 마운트 시 현재 닉네임을 입력창에 설정
@@ -42,6 +44,11 @@ export default function MyPage() {
     // 닉네임 변경 성공 시 입력창 업데이트
     const handleNicknameChangeSuccess = () => {
         setIsNicknameModalOpen(false);
+        // 모달에서 이미 전역 상태를 업데이트하므로 추가 작업 불필요
+    };
+
+    const handleDeleteUserSuccess = () => {
+        setIsDeleteUserModalOpen(false);
         // 모달에서 이미 전역 상태를 업데이트하므로 추가 작업 불필요
     };
 
@@ -83,7 +90,10 @@ export default function MyPage() {
                     </div>
 
                     <div className="flex justify-end gap-x-2">
-                        <button className="px-4 py-2 border border-red-500 text-red-600 rounded hover:bg-red-100 text-sm">
+                        <button
+                            onClick={() => setIsDeleteUserModalOpen(true)}
+                            className="px-4 py-2 border border-red-500 text-red-600 rounded hover:bg-red-100 text-sm"
+                        >
                             회원 탈퇴
                         </button>
                         <button className="px-4 py-2 border border-blue-500 text-blue-600 rounded hover:bg-blue-100 text-sm">
@@ -148,6 +158,13 @@ export default function MyPage() {
                     </div>
                 </div>
             )}
+
+            {/* 회원탈퇴 모달 */}
+            <DeleteUserModal
+                isOpen={isDeleteUserModalOpen}
+                onClose={() => setIsDeleteUserModalOpen(false)}
+                onSuccess={handleDeleteUserSuccess}
+            />
 
             {/* 닉네임 변경 모달 */}
             <ChangeNicknameModal
