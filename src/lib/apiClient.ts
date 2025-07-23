@@ -2,7 +2,7 @@ import { useAuthStore } from '@/store/authStore';
 import { tokenUtils } from './tokenUtils';
 import Cookies from 'js-cookie';
 
-const URL = process.env.NEXT_PUBLIC_URL || 'http://localhost';
+const URL = process.env.NEXT_PUBLIC_URL || 'https://localhost';
 
 class ApiClient {
   private baseURL: string = URL;
