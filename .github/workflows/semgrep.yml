@@ -1,0 +1,34 @@
+name: Semgrep CI for front
+
+on:
+  pull_request:
+    branches:
+      - "**"
+  push:
+    branches:
+      - "**"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  semgrep:
+    name: semgrep-front/ci
+    runs-on: ubuntu-latest
+    container:
+      image: semgrep/semgrep
+
+    # Dependabot 제외
+    if: (github.actor != 'dependabot[bot]')
+    
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run Semgrep(front)
+        run: semgrep --config=p/typescript --config=p/javascript --config=p/security-audit . --sarif --output=semgrep.sarif
+      # semgrep 결과 gihub ui로 확인 가능
+      - name: Upload SARIF results to GitHub
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: semgrep.sarif
