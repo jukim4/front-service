@@ -26,4 +26,5 @@ jobs:
     
     steps:
       - uses: actions/checkout@v4
+      - run: pwd
       - run: semgrep --config=p/typescript --config=p/javascript --config=p/security-audit .
