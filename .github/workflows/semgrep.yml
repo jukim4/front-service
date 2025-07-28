@@ -26,5 +26,9 @@ jobs:
     
     steps:
       - uses: actions/checkout@v4
-      - run: pwd
-      - run: semgrep --config=p/typescript --config=p/javascript --config=p/security-audit .
+      - name: Run Semgrep(front)
+        run: semgrep --config=p/typescript --config=p/javascript --config=p/security-audit . --fail-on=error
+      - name: Upload SARIF results to GitHub
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: semgrep.sarif
