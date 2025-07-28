@@ -4,7 +4,8 @@ on:
   pull_request: {}
   push:
     branches:
-      - "main"
+      - "prod"
+      - "feature/*"
     paths:
       - ".github/workflows/semgrep.yml"
   workflow_dispatch: {}
