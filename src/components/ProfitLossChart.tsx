@@ -85,6 +85,7 @@ export default function PortfolioChart({chartData, isTradeHistoryLoading, chartE
           ],
         },
         options: {
+          animation: false,
           responsive: true,
           plugins: {
             legend: { display: false },

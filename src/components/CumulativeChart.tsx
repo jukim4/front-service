@@ -98,6 +98,7 @@ export default function CumulativeChart({chartData, isTradeHistoryLoading, chart
           ],
         },
         options: {
+          animation: false,
           responsive: true,
           plugins: {
             legend: { display: false },
